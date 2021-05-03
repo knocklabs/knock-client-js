@@ -7,6 +7,7 @@ export type StoreState = {
   appendItems: (response: FeedResponse) => void;
   setMetadata: (metadata: FeedMetadata) => void;
   setLoading: (loading: boolean) => void;
+  setItemAttrs: (itemIds: string[], attrs: object) => void;
 };
 
 export type User = {

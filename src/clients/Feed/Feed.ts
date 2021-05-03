@@ -12,6 +12,14 @@ type RealTimeEvents = "messages.new";
 
 type ItemOrItems = FeedItem | FeedItem[];
 
+type StatusType =
+  | "seen"
+  | "read"
+  | "archived"
+  | "unseen"
+  | "unread"
+  | "unarchived";
+
 class Feed {
   private apiClient: ApiClient;
   private feedId: string;
@@ -73,13 +81,62 @@ class Feed {
     return this.store.getState();
   }
 
-  async markAllAsRead() {}
+  async markAsSeen(itemOrItems: ItemOrItems) {
+    const now = new Date().toISOString();
+    this.optimisticallyPerformStatusUpdate(
+      itemOrItems,
+      "seen",
+      { seen_at: now },
+      "unseen_count"
+    );
+    return this.makeStatusUpdate(itemOrItems, "seen");
+  }
 
-  async markAsSeen(itemOrItems: ItemOrItems) {}
+  async markAsUnseen(itemOrItems: ItemOrItems) {
+    this.optimisticallyPerformStatusUpdate(
+      itemOrItems,
+      "unseen",
+      { seen_at: null },
+      "unseen_count"
+    );
+    return this.makeStatusUpdate(itemOrItems, "unseen");
+  }
 
-  async markAsRead(itemOrItems: ItemOrItems) {}
+  async markAsRead(itemOrItems: ItemOrItems) {
+    const now = new Date().toISOString();
+    this.optimisticallyPerformStatusUpdate(
+      itemOrItems,
+      "read",
+      { read_at: now },
+      "unread_count"
+    );
+    return this.makeStatusUpdate(itemOrItems, "read");
+  }
 
-  async markAsArchived(itemOrItems: ItemOrItems) {}
+  async markAsUnread(itemOrItems: ItemOrItems) {
+    this.optimisticallyPerformStatusUpdate(
+      itemOrItems,
+      "unread",
+      { read_at: null },
+      "unread_count"
+    );
+    return this.makeStatusUpdate(itemOrItems, "unread");
+  }
+
+  async markAsArchived(itemOrItems: ItemOrItems) {
+    const now = new Date().toISOString();
+    this.optimisticallyPerformStatusUpdate(itemOrItems, "archived", {
+      archived_at: now,
+    });
+    return this.makeStatusUpdate(itemOrItems, "archived");
+  }
+
+  async markAsUnarchived(itemOrItems: ItemOrItems) {
+    this.optimisticallyPerformStatusUpdate(itemOrItems, "unarchived", {
+      archived_at: null,
+    });
+    return this.makeStatusUpdate(itemOrItems, "unarchived");
+  }
 
   /* Fetches the feed content, appending it to the store */
   async fetch(options: FeedFetchOptions = {}) {
@@ -144,6 +201,59 @@ class Feed {
 
   private buildUserFeedId() {
     return `${this.feedId}:${this.userId}`;
+  }
+
+  private optimisticallyPerformStatusUpdate(
+    itemOrItems: ItemOrItems,
+    type: StatusType,
+    attrs: object,
+    badgeCountAttr?: "unread_count" | "unseen_count"
+  ) {
+    const { getState, setState } = this.store;
+    const itemIds = Array.isArray(itemOrItems)
+      ? itemOrItems.map((item) => item.id)
+      : [itemOrItems.id];
+
+    if (badgeCountAttr) {
+      const { metadata } = getState();
+
+      const direction = type.startsWith("un")
+        ? itemIds.length
+        : -itemIds.length;
+
+      setState((store) =>
+        store.setMetadata({
+          ...metadata,
+          [badgeCountAttr]: Math.max(0, metadata[badgeCountAttr] + direction),
+        })
+      );
+    }
+
+    // Update the items with the given attributes
+    setState((store) => store.setItemAttrs(itemIds, attrs));
+  }
+
+  private async makeStatusUpdate(itemOrItems: ItemOrItems, type: StatusType) {
+    // If we're interacting with an array, then we want to send this as a batch
+    if (Array.isArray(itemOrItems)) {
+      const itemIds = itemOrItems.map((item) => item.id);
+
+      const result = await this.apiClient.makeRequest({
+        method: "POST",
+        url: `/v1/messages/batch/${type}`,
+        data: { message_ids: itemIds },
+      });
+
+      return result;
+    }
+
+    // If its a single then we can just call the regular endpoint
+    const result = await this.apiClient.makeRequest({
+      method: type.startsWith("un") ? "DELETE" : "PUT",
+      url: `/v1/messages/${itemOrItems.id}/${type}`,
+    });
+
+    return result;
   }
 }
 

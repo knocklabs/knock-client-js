@@ -29,5 +29,24 @@ export default function createStore() {
         return { items: newItems, metadata: meta, loading: false };
       }),
     setMetadata: (metadata) => set((state) => ({ metadata })),
+    setItemAttrs: (itemIds, attrs) => {
+      // Create a map for the items to the updates to be made
+      const itemUpdatesMap: { [id: string]: object } = itemIds.reduce(
+        (acc, itemId) => ({ ...acc, [itemId]: attrs }),
+        {}
+      );
+
+      return set((state) => {
+        const items = state.items.map((item) => {
+          if (itemUpdatesMap[item.id]) {
+            return { ...item, ...itemUpdatesMap[item.id] };
+          }
+
+          return item;
+        });
+
+        return { items };
+      });
+    },
   }));
 }

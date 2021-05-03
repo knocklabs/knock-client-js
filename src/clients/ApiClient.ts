@@ -64,9 +64,8 @@ class ApiClient {
   }
 
   disconnectSocket() {
-    if (this.socketConnected) {
-      return this.socket.disconnect();
-    }
+    this.socket.disconnect();
+    return;
   }
 
   createChannel(name: string) {
