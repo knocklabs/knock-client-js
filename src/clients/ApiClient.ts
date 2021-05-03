@@ -31,9 +31,9 @@ class ApiClient {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        "x-knock-client": process.env.CLIENT,
+        "X-Knock-Client": process.env.CLIENT,
         Authorization: `Bearer ${this.apiKey}`,
-        "x-knock-user-token": this.userToken,
+        "X-Knock-User-Token": this.userToken,
       },
     });
 
