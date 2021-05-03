@@ -15,7 +15,7 @@
     "build:watch": "rollup -cw",
     "test": "echo \"Error: no test specified\" && exit 1",
     "verify": "npm run build && npm run test",
-    "publish": "npm run build && npm run publish --access public"
+    "publish": "npm run build && npm publish --access public"
   },
   "author": "@knocklabs",
   "license": "MIT",
