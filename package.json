@@ -1,6 +1,6 @@
 {
   "name": "@knocklabs/client",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "The clientside library for interacting with Knock",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
