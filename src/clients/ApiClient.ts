@@ -33,13 +33,13 @@ class ApiClient {
         "Content-Type": "application/json",
         "X-Knock-Client": process.env.CLIENT,
         Authorization: `Bearer ${this.apiKey}`,
-        "X-Knock-User-Token": this.userToken,
+        "X-Knock-User-Token": this.userToken || null,
       },
     });
 
     this.socket = new Socket(`${this.host.replace("http", "ws")}/ws/v1`, {
       params: {
-        user_token: this.userToken,
+        user_token: this.userToken || null,
         api_key: this.apiKey,
         client: process.env.CLIENT,
       },
