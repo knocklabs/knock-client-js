@@ -1,19 +1,8 @@
 import create from "zustand/vanilla";
-import { FeedMetadata, FeedResponse, FeedItem } from "./types";
-
-export type State = {
-  items: FeedItem[];
-  metadata: FeedMetadata;
-  loading: boolean;
-  setResult: (response: FeedResponse) => void;
-  prependItems: (response: FeedResponse) => void;
-  appendItems: (response: FeedResponse) => void;
-  setMetadata: (metadata: FeedMetadata) => void;
-  setLoading: (loading: boolean) => void;
-};
+import { StoreState } from "./types";
 
 export default function createStore() {
-  return create<State>((set, get) => ({
+  return create<StoreState>((set, get) => ({
     items: [],
     loading: false,
     metadata: {

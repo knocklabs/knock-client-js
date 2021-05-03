@@ -1,15 +1,11 @@
 import { useEffect, useMemo } from "react";
 import "./App.css";
-import { Knock } from "@knocklabs/client/dist";
+import Knock from "@knocklabs/client";
 import create from "zustand";
 
-const knockClient = new Knock(
-  process.env.REACT_APP_KNOCK_API_KEY,
-  "sk_test_-MrFEZJNP2e4Ijui3HmgyVt0ZAjsfc1YaC4lHj_3YEE",
-  {
-    host: "http://localhost:4001",
-  }
-);
+const knockClient = new Knock(process.env.REACT_APP_KNOCK_API_KEY, {
+  host: "http://localhost:4001",
+});
 
 knockClient.authenticate("chris", process.env.REACT_APP_KNOCK_USER_TOKEN);
 

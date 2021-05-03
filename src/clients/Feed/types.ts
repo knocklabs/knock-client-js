@@ -1,3 +1,14 @@
+export type StoreState = {
+  items: FeedItem[];
+  metadata: FeedMetadata;
+  loading: boolean;
+  setResult: (response: FeedResponse) => void;
+  prependItems: (response: FeedResponse) => void;
+  appendItems: (response: FeedResponse) => void;
+  setMetadata: (metadata: FeedMetadata) => void;
+  setLoading: (loading: boolean) => void;
+};
+
 export type User = {
   id: string;
   email: string;

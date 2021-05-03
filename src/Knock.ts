@@ -28,7 +28,7 @@ class Knock {
   }
 
   client() {
-    if (!this.userToken) {
+    if (!this.userId && !this.userToken) {
       throw new Error(
         "[Knock] You must call `authenticate` first before trying to make a request"
       );
@@ -47,7 +47,11 @@ class Knock {
     return this.apiClient;
   }
 
-  authenticate(userId: string, userToken: string) {
+  /*
+    Authenticates the current user. In non-sandbox environments
+    the userToken must be specified.
+  */
+  authenticate(userId: string, userToken?: string) {
     this.userId = userId;
     this.userToken = userToken;
     return;

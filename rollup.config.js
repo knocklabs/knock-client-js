@@ -25,7 +25,7 @@ export default {
     {
       file: pkg.browser,
       format: "iife",
-      name: "TextSelect",
+      name: "Knock",
     },
   ],
   external: [],

@@ -3,12 +3,14 @@ import { StoreApi } from "zustand";
 import EventEmitter from "eventemitter3";
 import ApiClient from "../ApiClient";
 import { FeedClientOptions } from "../FeedClient";
-import createStore, { State } from "./feedStore";
-import { NewMessageReceivedData, FeedItem } from "./types";
+import createStore from "./feedStore";
+import { NewMessageReceivedData, FeedItem, StoreState } from "./types";
 
 interface FeedFetchOptions extends FeedClientOptions {}
 
 type RealTimeEvents = "messages.new";
+
+type ItemOrItems = FeedItem | FeedItem[];
 
 class Feed {
   private apiClient: ApiClient;
@@ -21,7 +23,7 @@ class Feed {
   private defaultOptions: FeedClientOptions;
 
   // The raw store instance, used for binding in React and other environments
-  public store: StoreApi<State>;
+  public store: StoreApi<StoreState>;
 
   constructor(client: any, feedId: string, options: FeedClientOptions) {
     this.apiClient = client;
@@ -70,6 +72,14 @@ class Feed {
   getState() {
     return this.store.getState();
   }
+
+  async markAllAsRead() {}
+
+  async markAsSeen(itemOrItems: ItemOrItems) {}
+
+  async markAsRead(itemOrItems: ItemOrItems) {}
+
+  async markAsArchived(itemOrItems: ItemOrItems) {}
 
   /* Fetches the feed content, appending it to the store */
   async fetch(options: FeedFetchOptions = {}) {
