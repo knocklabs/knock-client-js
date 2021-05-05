@@ -1,5 +1,13 @@
 import create from "zustand/vanilla";
-import { StoreState } from "./types";
+import { FeedItem, StoreState } from "./types";
+
+function sortItems(items: FeedItem[]) {
+  return items.sort((a, b) => {
+    return (
+      new Date(b.inserted_at).getTime() - new Date(a.inserted_at).getTime()
+    );
+  });
+}
 
 export default function createStore() {
   return create<StoreState>((set, get) => ({
@@ -13,7 +21,7 @@ export default function createStore() {
     setLoading: (loading) => set(() => ({ loading })),
     setResult: ({ entries, meta }) =>
       set((state) => ({
-        items: entries,
+        items: sortItems(entries),
         metadata: meta,
         loading: false,
       })),
@@ -21,12 +29,12 @@ export default function createStore() {
       set((state) => {
         let newItems = state.items;
         newItems.unshift(...entries);
-        return { items: newItems, metadata: meta, loading: false };
+        return { items: sortItems(newItems), metadata: meta, loading: false };
       }),
     appendItems: ({ entries, meta }) =>
       set((state) => {
         const newItems = state.items.concat(entries);
-        return { items: newItems, metadata: meta, loading: false };
+        return { items: sortItems(newItems), metadata: meta, loading: false };
       }),
     setMetadata: (metadata) => set((state) => ({ metadata })),
     setItemAttrs: (itemIds, attrs) => {

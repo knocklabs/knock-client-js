@@ -4,26 +4,18 @@ import EventEmitter from "eventemitter3";
 import ApiClient from "../ApiClient";
 import { FeedClientOptions } from "../FeedClient";
 import createStore from "./feedStore";
-import { NewMessageReceivedData, FeedItem, StoreState } from "./types";
-
-interface FeedFetchOptions extends FeedClientOptions {}
-
-type RealTimeEvents = "messages.new";
-
-type ItemOrItems = FeedItem | FeedItem[];
-
-type StatusType =
-  | "seen"
-  | "read"
-  | "archived"
-  | "unseen"
-  | "unread"
-  | "unarchived";
+import {
+  NewMessageReceivedData,
+  FeedItem,
+  StoreState,
+  RealTimeEvents,
+  ItemOrItems,
+  StatusType,
+} from "./types";
+import Knock from "../../Knock";
 
 class Feed {
   private apiClient: ApiClient;
-  private feedId: string;
-  private userId: string;
   private userFeedId: string;
   private channelConnected: boolean;
   private channel: Channel;
@@ -33,10 +25,13 @@ class Feed {
   // The raw store instance, used for binding in React and other environments
   public store: StoreApi<StoreState>;
 
-  constructor(client: any, feedId: string, options: FeedClientOptions) {
-    this.apiClient = client;
+  constructor(
+    readonly knock: Knock,
+    readonly feedId: string,
+    options: FeedClientOptions
+  ) {
+    this.apiClient = knock.client();
     this.feedId = feedId;
-    this.userId = client.userId;
     this.userFeedId = this.buildUserFeedId();
     this.store = createStore();
     this.broadcaster = new EventEmitter();
@@ -139,7 +134,7 @@ class Feed {
   }
 
   /* Fetches the feed content, appending it to the store */
-  async fetch(options: FeedFetchOptions = {}) {
+  async fetch(options: FeedClientOptions = {}) {
     const { setState } = this.store;
 
     setState((store) => store.setLoading(true));
@@ -149,7 +144,7 @@ class Feed {
 
     const result = await this.apiClient.makeRequest({
       method: "GET",
-      url: `/v1/users/${this.userId}/feeds/${this.feedId}`,
+      url: `/v1/users/${this.knock.userId}/feeds/${this.feedId}`,
       params: queryParams,
     });
 
@@ -200,7 +195,7 @@ class Feed {
   }
 
   private buildUserFeedId() {
-    return `${this.feedId}:${this.userId}`;
+    return `${this.feedId}:${this.knock.userId}`;
   }
 
   private optimisticallyPerformStatusUpdate(

@@ -16,8 +16,7 @@ class FeedClient {
   }
 
   initialize(feedChannelId: string, options: FeedClientOptions = {}) {
-    const apiClient = this.instance.client();
-    return new Feed(apiClient, feedChannelId, options);
+    return new Feed(this.instance, feedChannelId, options);
   }
 }
 

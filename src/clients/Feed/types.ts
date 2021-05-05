@@ -68,3 +68,15 @@ export type FeedResponse = {
 export type NewMessageReceivedData = {
   metadata: FeedMetadata;
 };
+
+export type RealTimeEvents = "messages.new";
+
+export type ItemOrItems = FeedItem | FeedItem[];
+
+export type StatusType =
+  | "seen"
+  | "read"
+  | "archived"
+  | "unseen"
+  | "unread"
+  | "unarchived";

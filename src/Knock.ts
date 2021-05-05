@@ -1,23 +1,19 @@
 import ApiClient from "./clients/ApiClient";
 import FeedClient from "./clients/FeedClient";
+import { KnockOptions } from "./interfaces";
 
-type clientOptions = {
-  host?: string;
-};
+const DEFAULT_HOST = "https://api.knock.app";
 
 class Knock {
-  private apiKey: string;
   private host: string;
   private userToken: string;
   private apiClient: ApiClient | null;
-  public feeds: FeedClient;
-  protected userId: string;
+  public userId: string;
 
-  constructor(publicApiKey: string, options: clientOptions = {}) {
-    this.apiKey = publicApiKey;
-    this.host = options.host || "https://api.knock.app";
+  readonly feeds = new FeedClient(this);
 
-    this.feeds = new FeedClient(this);
+  constructor(readonly apiKey: string, options: KnockOptions = {}) {
+    this.host = options.host || DEFAULT_HOST;
 
     // Fail loudly if we're using the wrong API key
     if (this.apiKey.startsWith("sk_")) {
@@ -30,7 +26,7 @@ class Knock {
   client() {
     if (!this.userId && !this.userToken) {
       throw new Error(
-        "[Knock] You must call `authenticate` first before trying to make a request"
+        "[Knock] You must call `authenticate(userId, userToken)` first before trying to make a request"
       );
     }
 
@@ -39,7 +35,6 @@ class Knock {
       this.apiClient = new ApiClient({
         apiKey: this.apiKey,
         host: this.host,
-        userId: this.userId,
         userToken: this.userToken,
       });
     }
@@ -54,6 +49,7 @@ class Knock {
   authenticate(userId: string, userToken?: string) {
     this.userId = userId;
     this.userToken = userToken;
+
     return;
   }
 

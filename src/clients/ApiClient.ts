@@ -6,14 +6,12 @@ import { AxiosError } from "axios";
 type ApiClientOptions = {
   host: string;
   apiKey: string;
-  userId: string;
   userToken: string;
 };
 
 class ApiClient {
   private host: string;
   private apiKey: string;
-  public userId: string;
   private userToken: string;
   private axiosClient: AxiosInstance;
   private socket: Socket;
@@ -22,8 +20,7 @@ class ApiClient {
   constructor(options: ApiClientOptions) {
     this.host = options.host;
     this.apiKey = options.apiKey;
-    this.userId = options.userId;
-    this.userToken = options.userToken;
+    this.userToken = options.userToken || null;
 
     // Create a retryable axios client
     this.axiosClient = axios.create({
@@ -31,17 +28,15 @@ class ApiClient {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        "X-Knock-Client": process.env.CLIENT,
         Authorization: `Bearer ${this.apiKey}`,
-        "X-Knock-User-Token": this.userToken || null,
+        "X-Knock-User-Token": this.userToken,
       },
     });
 
     this.socket = new Socket(`${this.host.replace("http", "ws")}/ws/v1`, {
       params: {
-        user_token: this.userToken || null,
+        user_token: this.userToken,
         api_key: this.apiKey,
-        client: process.env.CLIENT,
       },
     });
 
