@@ -10,8 +10,16 @@ See the [documentation](https://docs.knock.app/notification-feeds/bring-your-own
 
 ## Installation
 
+Via NPM:
+
 ```bash
-yarn install @knocklabs/client
+npm install @knocklabs/client
+```
+
+Via Yarn:
+
+```bash
+yarn add @knocklabs/client
 ```
 
 ## Configuration
