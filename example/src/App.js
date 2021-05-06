@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import "./App.css";
-import Knock from "@knocklabs/client/dist";
+import Knock from "@knocklabs/client";
 import create from "zustand";
 
 const knockClient = new Knock(process.env.REACT_APP_KNOCK_API_KEY, {
@@ -23,7 +23,7 @@ const useNotificationFeed = (knockClient, feedId) => {
 function App() {
   const [feedClient, feedStore] = useNotificationFeed(
     knockClient,
-    process.env.REACT_APP_KNOCK_CHANNEL_ID
+    process.env.REACT_APP_KNOCK_CHANNEL_ID,
   );
 
   useEffect(() => {

@@ -39,7 +39,7 @@ knockClient.authenticate(
   // The id of the user you want to authenticate against
   currentUser.id,
   // You only need this in production environments
-  currentUser.knockToken
+  currentUser.knockToken,
 );
 ```
 
@@ -59,7 +59,7 @@ knockClient.authenticate(currentUser.id, currentUser.knockToken);
 
 // Initialize the feed
 const feedClient = knockClient.feeds.initialize(
-  process.env.KNOCK_FEED_CHANNEL_ID
+  process.env.KNOCK_FEED_CHANNEL_ID,
 );
 
 // Connect to the real-time socket
@@ -78,7 +78,9 @@ feedClient.fetch({
   after: lastItem.__cursor,
   before: firstItem.__cursor,
   // Defaults to 50
-  limit: 50,
+  page_size: 10,
+  // Filter by a specific source
+  source: "notification-key",
 });
 
 teardown();
@@ -89,7 +91,7 @@ teardown();
 ```typescript
 // Initialize the feed as in above examples
 const feedClient = knockClient.feeds.initialize(
-  process.env.KNOCK_FEED_CHANNEL_ID
+  process.env.KNOCK_FEED_CHANNEL_ID,
 );
 
 // Gives you all of the items currently in the store
@@ -104,7 +106,7 @@ import create from "zustand";
 
 // Initialize the feed as in above examples
 const feedClient = knockClient.feeds.initialize(
-  process.env.KNOCK_FEED_CHANNEL_ID
+  process.env.KNOCK_FEED_CHANNEL_ID,
 );
 
 const useFeedStore = create(feedClient.store);
@@ -121,7 +123,7 @@ const meta = useFeedStore((state) => state.metadata);
 ```typescript
 // Initialize the feed as in above examples
 const feedClient = knockClient.feeds.initialize(
-  process.env.KNOCK_FEED_CHANNEL_ID
+  process.env.KNOCK_FEED_CHANNEL_ID,
 );
 
 // Mark one or more items as read
