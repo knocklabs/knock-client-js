@@ -1,5 +1,6 @@
 import create from "zustand/vanilla";
-import { FeedItem, StoreState } from "./types";
+import { FeedItem } from "./interfaces";
+import { FeedStoreState } from "./types";
 
 function sortItems(items: FeedItem[]) {
   return items.sort((a, b) => {
@@ -10,7 +11,7 @@ function sortItems(items: FeedItem[]) {
 }
 
 export default function createStore() {
-  return create<StoreState>((set, get) => ({
+  return create<FeedStoreState>((set) => ({
     items: [],
     loading: false,
     metadata: {
@@ -20,14 +21,14 @@ export default function createStore() {
     },
     setLoading: (loading) => set(() => ({ loading })),
     setResult: ({ entries, meta }) =>
-      set((state) => ({
+      set(() => ({
         items: sortItems(entries),
         metadata: meta,
         loading: false,
       })),
     prependItems: ({ entries, meta }) =>
       set((state) => {
-        let newItems = state.items;
+        const newItems = state.items;
         newItems.unshift(...entries);
         return { items: sortItems(newItems), metadata: meta, loading: false };
       }),
@@ -36,12 +37,12 @@ export default function createStore() {
         const newItems = state.items.concat(entries);
         return { items: sortItems(newItems), metadata: meta, loading: false };
       }),
-    setMetadata: (metadata) => set((state) => ({ metadata })),
+    setMetadata: (metadata) => set(() => ({ metadata })),
     setItemAttrs: (itemIds, attrs) => {
       // Create a map for the items to the updates to be made
       const itemUpdatesMap: { [id: string]: object } = itemIds.reduce(
         (acc, itemId) => ({ ...acc, [itemId]: attrs }),
-        {}
+        {},
       );
 
       return set((state) => {

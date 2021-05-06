@@ -1,19 +1,24 @@
 {
-	"compilerOptions": {
-		"declaration": true,
-		"declarationDir": "./dist",
-		"module": "es6",
-		"noImplicitAny": true,
-		"outDir": "./dist",
-		"target": "es2015",
-		"skipLibCheck": true,
-		"moduleResolution": "node",
-		"allowSyntheticDefaultImports": true
-	},
-	"include": [
-		"src/index.ts"
-	],
-	"exclude": [
-		"node_modules"
-	]
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "noUnusedLocals": true,
+    "noImplicitAny": true,
+    "declarationDir": "dist/types",
+    "declaration": true,
+    "target": "esnext",
+    "module": "esnext",
+    "strict": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

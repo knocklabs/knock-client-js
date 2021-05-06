@@ -1,14 +1,14 @@
-import ApiClient from "./clients/ApiClient";
-import FeedClient from "./clients/FeedClient";
+import ApiClient from "./api";
+import FeedClient from "./clients/feed";
 import { KnockOptions } from "./interfaces";
 
 const DEFAULT_HOST = "https://api.knock.app";
 
 class Knock {
   private host: string;
-  private userToken: string;
-  private apiClient: ApiClient | null;
-  public userId: string;
+  private userToken: string | undefined;
+  private apiClient: ApiClient | null = null;
+  public userId: string | undefined;
 
   readonly feeds = new FeedClient(this);
 
@@ -18,7 +18,7 @@ class Knock {
     // Fail loudly if we're using the wrong API key
     if (this.apiKey.startsWith("sk_")) {
       throw new Error(
-        "[Knock] You are using your secret API key on the client. Please use the public key."
+        "[Knock] You are using your secret API key on the client. Please use the public key.",
       );
     }
   }
@@ -26,7 +26,7 @@ class Knock {
   client() {
     if (!this.userId && !this.userToken) {
       throw new Error(
-        "[Knock] You must call `authenticate(userId, userToken)` first before trying to make a request"
+        "[Knock] You must call `authenticate(userId, userToken)` first before trying to make a request",
       );
     }
 

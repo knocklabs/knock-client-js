@@ -6,16 +6,16 @@ import { AxiosError } from "axios";
 type ApiClientOptions = {
   host: string;
   apiKey: string;
-  userToken: string;
+  userToken: string | undefined;
 };
 
 class ApiClient {
   private host: string;
   private apiKey: string;
-  private userToken: string;
+  private userToken: string | null;
   private axiosClient: AxiosInstance;
   private socket: Socket;
-  public socketConnected: boolean;
+  public socketConnected: boolean = false;
 
   constructor(options: ApiClientOptions) {
     this.host = options.host;
@@ -77,6 +77,7 @@ class ApiClient {
         status: result.status,
       };
     } catch (e) {
+      // tslint:disable-next-line
       console.error(e);
 
       return {

@@ -1,18 +1,20 @@
-import { nodeResolve } from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
-import typescript from "rollup-plugin-typescript2";
-import json from "@rollup/plugin-json";
+import resolve from "@rollup/plugin-node-resolve";
+import babel from "@rollup/plugin-babel";
 import pkg from "./package.json";
-import { terser } from "rollup-plugin-terser";
-import replace from "@rollup/plugin-replace";
 
-// delete old typings to avoid issues
-require("fs").unlink("dist/index.d.ts", (err) => {});
+const extensions = [".js", ".jsx", ".ts", ".tsx"];
 
-const production = !process.env.ROLLUP_WATCH;
+const name = "KnockClient";
 
 export default {
-  input: "src/index.ts",
+  input: "./src/index.ts",
+  external: [/@babel\/runtime/, /node_modules/],
+  plugins: [
+    resolve({ extensions }),
+    commonjs(),
+    babel({ extensions, include: ["src/**/*"], babelHelpers: "runtime" }),
+  ],
   output: [
     {
       file: pkg.main,
@@ -23,26 +25,11 @@ export default {
       file: pkg.module,
       format: "es",
     },
-    {
-      file: pkg.browser,
-      format: "iife",
-      name: "Knock",
-    },
-  ],
-  external: [],
-  plugins: [
-    replace({
-      "process.env.CLIENT": JSON.stringify(`${pkg.name}@${pkg.version}`),
-      preventAssignment: true,
-    }),
-    json(),
-    nodeResolve({ browser: true }),
-    commonjs(),
-    typescript({
-      typescript: require("typescript"),
-      sourceMap: !production,
-      inlineSources: !production,
-    }),
-    production && terser(),
+    // {
+    //   file: pkg.browser,
+    //   format: "iife",
+    //   name,
+    //   globals: {},
+    // },
   ],
 };

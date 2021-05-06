@@ -1,34 +1,40 @@
 import { Channel } from "phoenix";
 import { StoreApi } from "zustand";
 import EventEmitter from "eventemitter3";
-import ApiClient from "../ApiClient";
-import { FeedClientOptions } from "../FeedClient";
-import createStore from "./feedStore";
+import ApiClient from "../../api";
+import createStore from "./store";
 import {
-  NewMessageReceivedData,
-  FeedItem,
-  StoreState,
-  RealTimeEvents,
-  ItemOrItems,
-  StatusType,
+  FeedMessagesReceivedPayload,
+  FeedRealTimeEvent,
+  FeedItemOrItems,
+  FeedStoreState,
 } from "./types";
-import Knock from "../../Knock";
+import { FeedItem, FeedClientOptions } from "./interfaces";
+import Knock from "../../knock";
+
+export type Status =
+  | "seen"
+  | "read"
+  | "archived"
+  | "unseen"
+  | "unread"
+  | "unarchived";
 
 class Feed {
   private apiClient: ApiClient;
   private userFeedId: string;
-  private channelConnected: boolean;
+  private channelConnected: boolean = false;
   private channel: Channel;
   private broadcaster: EventEmitter;
   private defaultOptions: FeedClientOptions;
 
   // The raw store instance, used for binding in React and other environments
-  public store: StoreApi<StoreState>;
+  public store: StoreApi<FeedStoreState>;
 
   constructor(
     readonly knock: Knock,
     readonly feedId: string,
-    options: FeedClientOptions
+    options: FeedClientOptions,
   ) {
     this.apiClient = knock.client();
     this.feedId = feedId;
@@ -58,17 +64,18 @@ class Feed {
       try {
         this.channel.leave();
       } catch (e) {
+        // tslint:disable-next-line
         console.error("error while leaving channel", e);
       }
     };
   }
 
   /* Binds a handler to be invoked when event occurs */
-  on(eventName: RealTimeEvents, callback: () => void) {
+  on(eventName: FeedRealTimeEvent, callback: () => void) {
     this.broadcaster.on(eventName, callback);
   }
 
-  off(eventName: RealTimeEvents, callback: () => void) {
+  off(eventName: FeedRealTimeEvent, callback: () => void) {
     this.broadcaster.off(eventName, callback);
   }
 
@@ -76,49 +83,49 @@ class Feed {
     return this.store.getState();
   }
 
-  async markAsSeen(itemOrItems: ItemOrItems) {
+  async markAsSeen(itemOrItems: FeedItemOrItems) {
     const now = new Date().toISOString();
     this.optimisticallyPerformStatusUpdate(
       itemOrItems,
       "seen",
       { seen_at: now },
-      "unseen_count"
+      "unseen_count",
     );
     return this.makeStatusUpdate(itemOrItems, "seen");
   }
 
-  async markAsUnseen(itemOrItems: ItemOrItems) {
+  async markAsUnseen(itemOrItems: FeedItemOrItems) {
     this.optimisticallyPerformStatusUpdate(
       itemOrItems,
       "unseen",
       { seen_at: null },
-      "unseen_count"
+      "unseen_count",
     );
     return this.makeStatusUpdate(itemOrItems, "unseen");
   }
 
-  async markAsRead(itemOrItems: ItemOrItems) {
+  async markAsRead(itemOrItems: FeedItemOrItems) {
     const now = new Date().toISOString();
     this.optimisticallyPerformStatusUpdate(
       itemOrItems,
       "read",
       { read_at: now },
-      "unread_count"
+      "unread_count",
     );
     return this.makeStatusUpdate(itemOrItems, "read");
   }
 
-  async markAsUnread(itemOrItems: ItemOrItems) {
+  async markAsUnread(itemOrItems: FeedItemOrItems) {
     this.optimisticallyPerformStatusUpdate(
       itemOrItems,
       "unread",
       { read_at: null },
-      "unread_count"
+      "unread_count",
     );
     return this.makeStatusUpdate(itemOrItems, "unread");
   }
 
-  async markAsArchived(itemOrItems: ItemOrItems) {
+  async markAsArchived(itemOrItems: FeedItemOrItems) {
     const now = new Date().toISOString();
     this.optimisticallyPerformStatusUpdate(itemOrItems, "archived", {
       archived_at: now,
@@ -126,7 +133,7 @@ class Feed {
     return this.makeStatusUpdate(itemOrItems, "archived");
   }
 
-  async markAsUnarchived(itemOrItems: ItemOrItems) {
+  async markAsUnarchived(itemOrItems: FeedItemOrItems) {
     this.optimisticallyPerformStatusUpdate(itemOrItems, "unarchived", {
       archived_at: null,
     });
@@ -179,12 +186,14 @@ class Feed {
     return { data: response, status: result.statusCode };
   }
 
-  private broadcast(eventName: RealTimeEvents, data: any) {
+  private broadcast(eventName: FeedRealTimeEvent, data: any) {
     this.broadcaster.emit(eventName, data);
   }
 
   // Invoked when a new real-time message comes in from the socket
-  private async onNewMessageReceived({ metadata }: NewMessageReceivedData) {
+  private async onNewMessageReceived({
+    metadata,
+  }: FeedMessagesReceivedPayload) {
     // Handle the new message coming in
     const { getState, setState } = this.store;
     const currentHead: FeedItem | undefined = getState().items[0];
@@ -199,10 +208,10 @@ class Feed {
   }
 
   private optimisticallyPerformStatusUpdate(
-    itemOrItems: ItemOrItems,
-    type: StatusType,
+    itemOrItems: FeedItemOrItems,
+    type: Status,
     attrs: object,
-    badgeCountAttr?: "unread_count" | "unseen_count"
+    badgeCountAttr?: "unread_count" | "unseen_count",
   ) {
     const { getState, setState } = this.store;
     const itemIds = Array.isArray(itemOrItems)
@@ -220,7 +229,7 @@ class Feed {
         store.setMetadata({
           ...metadata,
           [badgeCountAttr]: Math.max(0, metadata[badgeCountAttr] + direction),
-        })
+        }),
       );
     }
 
@@ -228,18 +237,16 @@ class Feed {
     setState((store) => store.setItemAttrs(itemIds, attrs));
   }
 
-  private async makeStatusUpdate(itemOrItems: ItemOrItems, type: StatusType) {
+  private async makeStatusUpdate(itemOrItems: FeedItemOrItems, type: Status) {
     // If we're interacting with an array, then we want to send this as a batch
     if (Array.isArray(itemOrItems)) {
       const itemIds = itemOrItems.map((item) => item.id);
 
-      const result = await this.apiClient.makeRequest({
+      return await this.apiClient.makeRequest({
         method: "POST",
         url: `/v1/messages/batch/${type}`,
         data: { message_ids: itemIds },
       });
-
-      return result;
     }
 
     // If its a single then we can just call the regular endpoint
