@@ -1,17 +1,19 @@
 {
   "name": "@knocklabs/client",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "The clientside library for interacting with Knock",
   "homepage": "https://github.com/knocklabs/knock-client-js",
   "author": "@knocklabs",
   "license": "MIT",
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.esm.js",
-  "browser": "dist/index.iife.js",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
   "types": "dist/types/index.d.ts",
+  "typings": "dist/types/index.d.ts",
   "exports": {
-    "require": "./dist/index.cjs.js",
-    "import": "./dist/index.esm.js"
+    ".": {
+      "require": "./dist/cjs/index.js",
+      "default": "./dist/esm/index.js"
+    }
   },
   "files": [
     "dist",
@@ -31,24 +33,23 @@
     "clean": "rimraf dist",
     "type-check": "tsc --noEmit",
     "type-check:watch": "npm run type-check -- --watch",
-    "build:types": "tsc --emitDeclarationOnly",
-    "build:js": "rollup -c",
-    "build": "npm run clean && npm run build:types && npm run build:js",
+    "build": "yarn clean && yarn build:esm && yarn build:cjs && yarn build:types",
+    "build:esm": "cross-env BABEL_ENV=esm babel src --extensions .ts,.tsx -d dist/esm --source-maps --ignore 'src/stories/*'",
+    "build:cjs": "cross-env BABEL_ENV=cjs babel src --extensions .ts,.tsx -d dist/cjs --source-maps --ignore 'src/stories/*'",
+    "build:types": "tsc --emitDeclarationOnly --declaration --declarationDir dist/types",
     "test": "jest",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
+    "@babel/cli": "^7.13.16",
     "@babel/core": "^7.14.0",
     "@babel/plugin-proposal-class-properties": "^7.13.0",
     "@babel/plugin-proposal-object-rest-spread": "^7.13.8",
     "@babel/plugin-transform-runtime": "^7.13.15",
     "@babel/preset-env": "^7.14.1",
     "@babel/preset-typescript": "^7.13.0",
-    "@rollup/plugin-babel": "^5.3.0",
-    "@rollup/plugin-commonjs": "^18.0.0",
-    "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "^11.2.1",
     "@types/phoenix": "^1.5.1",
+    "cross-env": "^7.0.3",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "rollup": "^2.46.0",
