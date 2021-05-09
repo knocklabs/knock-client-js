@@ -14,4 +14,5 @@ class FeedClient {
   }
 }
 
+export { Feed };
 export default FeedClient;

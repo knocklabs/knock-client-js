@@ -16,7 +16,7 @@ class Knock {
     this.host = options.host || DEFAULT_HOST;
 
     // Fail loudly if we're using the wrong API key
-    if (this.apiKey.startsWith("sk_")) {
+    if (this.apiKey && this.apiKey.startsWith("sk_")) {
       throw new Error(
         "[Knock] You are using your secret API key on the client. Please use the public key.",
       );
@@ -25,8 +25,12 @@ class Knock {
 
   client() {
     if (!this.userId && !this.userToken) {
-      throw new Error(
-        "[Knock] You must call `authenticate(userId, userToken)` first before trying to make a request",
+      console.warn(
+        `[Knock] You must call authenticate(userId, userToken) first before trying to make a request.
+        Typically you'll see this message when you're creating a feed instance before having called
+        authenticate with a user Id and token. That means we won't know who to issue the request
+        to Knock on behalf of.
+        `,
       );
     }
 
