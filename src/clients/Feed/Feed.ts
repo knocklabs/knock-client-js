@@ -171,19 +171,30 @@ class Feed {
     };
 
     if (options.before) {
-      // We were doing a before fetch, so prepend these
-      setState((state) => state.prependItems(response));
+      const opts = { shouldSetPage: false, shouldAppend: true };
+      setState((state) => state.setResult(response, opts));
     } else if (options.after) {
-      // Append items as fetching after
-      setState((state) => state.appendItems(response));
+      const opts = { shouldSetPage: true, shouldAppend: true };
+      setState((state) => state.setResult(response, opts));
     } else {
-      // Otherwise just clobber everything in here
       setState((state) => state.setResult(response));
     }
 
     this.broadcast("messages.new", response);
-
     return { data: response, status: result.statusCode };
+  }
+
+  async fetchNextPage() {
+    // Attempts to fetch the next page of results (if we have any)
+    const { getState } = this.store;
+    const { pageInfo } = getState();
+
+    if (!pageInfo.after) {
+      // Nothing more to fetch
+      return;
+    }
+
+    this.fetch({ after: pageInfo.after });
   }
 
   private broadcast(eventName: FeedRealTimeEvent, data: any) {

@@ -36,7 +36,7 @@ function App() {
     return () => teardown();
   }, [feedClient]);
 
-  const { loading, items } = feedStore((state) => state);
+  const { loading, items, pageInfo } = feedStore((state) => state);
 
   return (
     <div className="App">
@@ -45,7 +45,7 @@ function App() {
       {loading && <span>Loading...</span>}
 
       {items.map((item) => (
-        <div>
+        <div key={item.id}>
           ID: {item.id}
           <br />
           Actor ID: {item.actors[0].id}
@@ -56,6 +56,13 @@ function App() {
           <br />
         </div>
       ))}
+
+      <button
+        disabled={!pageInfo.after || loading}
+        onClick={() => feedClient.fetchNextPage()}
+      >
+        Load more items
+      </button>
     </div>
   );
 }

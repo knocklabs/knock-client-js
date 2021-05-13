@@ -1,42 +1,56 @@
 import create from "zustand/vanilla";
 import { FeedItem } from "./interfaces";
 import { FeedStoreState } from "./types";
+import { deduplicateItems, sortItems } from "./utils";
 
-function sortItems(items: FeedItem[]) {
-  return items.sort((a, b) => {
-    return (
-      new Date(b.inserted_at).getTime() - new Date(a.inserted_at).getTime()
-    );
-  });
+function processItems(items: FeedItem[]) {
+  const deduped = deduplicateItems(items);
+  const sorted = sortItems(deduped);
+
+  return sorted;
 }
+
+const defaultSetResultOptions = {
+  shouldSetPage: true,
+  shouldAppend: false,
+};
 
 export default function createStore() {
   return create<FeedStoreState>((set) => ({
     items: [],
     loading: false,
+    // Keeps track of the current badge counts
     metadata: {
       total_count: 0,
       unread_count: 0,
       unseen_count: 0,
     },
+    // Keeps track of the last full page of results we received (for paginating)
+    pageInfo: {
+      before: null,
+      after: null,
+      page_size: 50,
+    },
     setLoading: (loading) => set(() => ({ loading })),
-    setResult: ({ entries, meta }) =>
-      set(() => ({
-        items: sortItems(entries),
-        metadata: meta,
-        loading: false,
-      })),
-    prependItems: ({ entries, meta }) =>
+
+    setResult: (
+      { entries, meta, page_info },
+      options = defaultSetResultOptions,
+    ) =>
       set((state) => {
-        const newItems = state.items;
-        newItems.unshift(...entries);
-        return { items: sortItems(newItems), metadata: meta, loading: false };
+        // We resort the list on set, so concating everything is fine (if a bit suboptimal)
+        const items = options.shouldAppend
+          ? processItems(state.items.concat(entries))
+          : entries;
+
+        return {
+          items,
+          metadata: meta,
+          pageInfo: options.shouldSetPage ? page_info : state.pageInfo,
+          loading: false,
+        };
       }),
-    appendItems: ({ entries, meta }) =>
-      set((state) => {
-        const newItems = state.items.concat(entries);
-        return { items: sortItems(newItems), metadata: meta, loading: false };
-      }),
+
     setMetadata: (metadata) => set(() => ({ metadata })),
     setItemAttrs: (itemIds, attrs) => {
       // Create a map for the items to the updates to be made
