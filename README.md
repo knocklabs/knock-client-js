@@ -140,3 +140,31 @@ feedClient.markAsUnseen(feedItemOrItems);
 // Mark one or more items as unarchived
 feedClient.markAsUnarchived(feedItemOrItems);
 ```
+
+### Managing user preferences
+
+```typescript
+// Set an entire preference set
+await knockClient.preferences.set({
+  channel_types: { email: true, sms: false },
+  workflows: {
+    "dinosaurs-loose": {
+      channel_types: { email: false, in_app_feed: true },
+    },
+  },
+});
+
+// Retrieve a whole preference set
+const preferences = await knockClient.preferences.get();
+
+// Granular preference setting for channel types
+await knockClient.preferences.setChannelType("email", false);
+
+// Granular preference setting for workflows
+await knockClient.preferences.setWorkflow("dinosaurs-loose", {
+  channel_types: {
+    email: true,
+    in_app_feed: false,
+  },
+});
+```

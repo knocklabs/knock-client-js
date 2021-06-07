@@ -1,5 +1,6 @@
 import ApiClient from "./api";
 import FeedClient from "./clients/feed";
+import Preferences from "./clients/preferences";
 import { KnockOptions } from "./interfaces";
 
 const DEFAULT_HOST = "https://api.knock.app";
@@ -11,6 +12,7 @@ class Knock {
   public userId: string | undefined;
 
   readonly feeds = new FeedClient(this);
+  readonly preferences = new Preferences(this);
 
   constructor(readonly apiKey: string, options: KnockOptions = {}) {
     this.host = options.host || DEFAULT_HOST;

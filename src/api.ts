@@ -9,6 +9,13 @@ type ApiClientOptions = {
   userToken: string | undefined;
 };
 
+export interface ApiResponse {
+  error?: any;
+  body?: any;
+  statusCode: "ok" | "error";
+  status: number;
+}
+
 class ApiClient {
   private host: string;
   private apiKey: string;
@@ -67,13 +74,14 @@ class ApiClient {
     return this.socket.channel(name);
   }
 
-  async makeRequest(req: AxiosRequestConfig) {
+  async makeRequest(req: AxiosRequestConfig): Promise<ApiResponse> {
     try {
       const result = await this.axiosClient(req);
 
       return {
         statusCode: result.status < 300 ? "ok" : "error",
         body: result.data,
+        error: undefined,
         status: result.status,
       };
     } catch (e) {
@@ -82,6 +90,8 @@ class ApiClient {
 
       return {
         statusCode: "error",
+        status: 500,
+        body: undefined,
         error: e,
       };
     }
