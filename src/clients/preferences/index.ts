@@ -12,6 +12,14 @@ import {
 
 const DEFAULT_PREFERENCE_SET_ID = "default";
 
+function buildUpdateParam(param: WorkflowPreferenceSetting) {
+  if (typeof param === "object") {
+    return param;
+  }
+
+  return { subscribed: param };
+}
+
 class Preferences {
   private instance: Knock;
 
@@ -106,11 +114,12 @@ class Preferences {
     options: PreferenceOptions = {},
   ) {
     const preferenceSetId = options.preferenceSet || DEFAULT_PREFERENCE_SET_ID;
+    const params = buildUpdateParam(setting);
 
     const result = await this.instance.client().makeRequest({
       method: "PUT",
       url: `/v1/users/${this.instance.userId}/preferences/${preferenceSetId}/workflows/${workflowKey}`,
-      data: { subscribed: setting },
+      data: params,
     });
 
     return this.handleResponse(result);
@@ -137,11 +146,12 @@ class Preferences {
     options: PreferenceOptions = {},
   ) {
     const preferenceSetId = options.preferenceSet || DEFAULT_PREFERENCE_SET_ID;
+    const params = buildUpdateParam(setting);
 
     const result = await this.instance.client().makeRequest({
       method: "PUT",
       url: `/v1/users/${this.instance.userId}/preferences/${preferenceSetId}/categories/${categoryKey}`,
-      data: { subscribed: setting },
+      data: params,
     });
 
     return this.handleResponse(result);
