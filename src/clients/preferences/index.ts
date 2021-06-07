@@ -140,7 +140,7 @@ class Preferences {
 
     const result = await this.instance.client().makeRequest({
       method: "PUT",
-      url: `/v1/users/${this.instance.userId}/preferences/${preferenceSetId}/workflows/${categoryKey}`,
+      url: `/v1/users/${this.instance.userId}/preferences/${preferenceSetId}/categories/${categoryKey}`,
       data: { subscribed: setting },
     });
 
