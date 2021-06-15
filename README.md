@@ -1,6 +1,6 @@
 # Knock Javascript client library
 
-A clientside Javascript library to interact with user-facing Knock features, such as feeds.
+A client-side Javascript library to interact with user-facing Knock features, such as feeds.
 
 **Note: this is a lower level library designed for building UI on top of**
 
@@ -47,7 +47,7 @@ knockClient.authenticate(
 
 You can find an example usage in a React application in the [example/App.js](https://github.com/knocklabs/client-js/blob/main/example/src/App.js) file, which is a plain-old Create React App.
 
-### Retreiving new items from the feed
+### Retrieving new items from the feed
 
 ```typescript
 import Knock from "@knocklabs/client";
@@ -60,6 +60,8 @@ knockClient.authenticate(currentUser.id, currentUser.knockToken);
 // Initialize the feed
 const feedClient = knockClient.feeds.initialize(
   process.env.KNOCK_FEED_CHANNEL_ID,
+  // Optionally you can provide a default scope here:
+  // { tenant: "jurassic-park", source: "new-comment" },
 );
 
 // Connect to the real-time socket
@@ -81,12 +83,14 @@ feedClient.fetch({
   page_size: 10,
   // Filter by a specific source
   source: "notification-key",
+  // Filter by a specific tenant
+  tenant: "jurassic-park",
 });
 
 teardown();
 ```
 
-### Reading the feed store state (programatically)
+### Reading the feed store state (programmatically)
 
 ```typescript
 // Initialize the feed as in above examples
