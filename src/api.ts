@@ -70,8 +70,8 @@ class ApiClient {
     return;
   }
 
-  createChannel(name: string) {
-    return this.socket.channel(name);
+  createChannel(name: string, params?: object) {
+    return this.socket.channel(name, params);
   }
 
   async makeRequest(req: AxiosRequestConfig): Promise<ApiResponse> {
