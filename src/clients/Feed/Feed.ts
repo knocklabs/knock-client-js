@@ -9,8 +9,9 @@ import {
   FeedItemOrItems,
   FeedStoreState,
 } from "./types";
-import { FeedItem, FeedClientOptions } from "./interfaces";
+import { FeedItem, FeedClientOptions, FetchFeedOptions } from "./interfaces";
 import Knock from "../../knock";
+import { isRequestInFlight, NetworkStatus } from "../../networkStatus";
 
 export type Status =
   | "seen"
@@ -145,10 +146,19 @@ class Feed {
   }
 
   /* Fetches the feed content, appending it to the store */
-  async fetch(options: FeedClientOptions = {}) {
-    const { setState } = this.store;
+  async fetch(options: FetchFeedOptions = {}) {
+    const { setState, getState } = this.store;
+    const { networkStatus } = getState();
 
-    setState((store) => store.setLoading(true));
+    // If there's an existing request in flight, then do nothing
+    if (isRequestInFlight(networkStatus)) {
+      return;
+    }
+
+    // Set the loading type based on the request type it is
+    setState((store) =>
+      store.setNetworkStatus(options.__loadingType ?? NetworkStatus.loading),
+    );
 
     // Always include the default params, if they have been set
     const queryParams = { ...this.defaultOptions, ...options };
@@ -160,7 +170,7 @@ class Feed {
     });
 
     if (result.statusCode === "error") {
-      setState((store) => store.setLoading(false));
+      setState((store) => store.setNetworkStatus(NetworkStatus.error));
 
       return {
         status: result.statusCode,
@@ -198,7 +208,10 @@ class Feed {
       return;
     }
 
-    this.fetch({ after: pageInfo.after });
+    this.fetch({
+      after: pageInfo.after,
+      __loadingType: NetworkStatus.fetchMore,
+    });
   }
 
   private broadcast(eventName: FeedRealTimeEvent, data: any) {
@@ -236,6 +249,8 @@ class Feed {
     if (badgeCountAttr) {
       const { metadata } = getState();
 
+      // Tnis is a hack to determine the direction of whether we're
+      // adding or removing from the badge count
       const direction = type.startsWith("un")
         ? itemIds.length
         : -itemIds.length;

@@ -1,4 +1,5 @@
 import create from "zustand/vanilla";
+import { NetworkStatus } from "../../networkStatus";
 import { FeedItem } from "./interfaces";
 import { FeedStoreState } from "./types";
 import { deduplicateItems, sortItems } from "./utils";
@@ -17,21 +18,36 @@ const defaultSetResultOptions = {
 
 export default function createStore() {
   return create<FeedStoreState>((set) => ({
+    // Keeps track of all of the items loaded
     items: [],
+
+    // The network status indicates what's happening with the request
+    networkStatus: NetworkStatus.ready,
     loading: false,
+
     // Keeps track of the current badge counts
     metadata: {
       total_count: 0,
       unread_count: 0,
       unseen_count: 0,
     },
+
     // Keeps track of the last full page of results we received (for paginating)
     pageInfo: {
       before: null,
       after: null,
       page_size: 50,
     },
+
+    // TODO: remove this function from the store as we're now using the
+    // `setNetworkStatus` function to derive this information instead
     setLoading: (loading) => set(() => ({ loading })),
+
+    setNetworkStatus: (networkStatus: NetworkStatus) =>
+      set(() => ({
+        networkStatus,
+        loading: networkStatus === NetworkStatus.loading,
+      })),
 
     setResult: (
       { entries, meta, page_info },
@@ -48,6 +64,7 @@ export default function createStore() {
           metadata: meta,
           pageInfo: options.shouldSetPage ? page_info : state.pageInfo,
           loading: false,
+          networkStatus: NetworkStatus.ready,
         };
       }),
 
