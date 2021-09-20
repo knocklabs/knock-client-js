@@ -9,8 +9,9 @@ import {
   FeedItemOrItems,
   FeedStoreState,
 } from "./types";
-import { FeedItem, FeedClientOptions } from "./interfaces";
+import { FeedItem, FeedClientOptions, FetchFeedOptions } from "./interfaces";
 import Knock from "../../knock";
+import { isRequestInFlight, NetworkStatus } from "../../networkStatus";
 
 export type Status =
   | "seen"
@@ -129,11 +130,53 @@ class Feed {
     return this.makeStatusUpdate(itemOrItems, "unread");
   }
 
+  /*
+  Marking one or more items as archived should:
+
+  - Decrement the badge count for any unread / unseen items
+  - Remove the item from the feed list, when the include_archived flag is not true)
+
+  TODO: how do we handle rollbacks?
+  */
   async markAsArchived(itemOrItems: FeedItemOrItems) {
-    const now = new Date().toISOString();
-    this.optimisticallyPerformStatusUpdate(itemOrItems, "archived", {
-      archived_at: now,
-    });
+    const { getState, setState } = this.store;
+    const state = getState();
+    const shouldRemoveItems = this.defaultOptions.include_archived !== true;
+
+    const normalizedItems = Array.isArray(itemOrItems)
+      ? itemOrItems
+      : [itemOrItems];
+
+    const itemIds: string[] = normalizedItems.map((item) => item.id);
+
+    // If any of the items are unseen or unread, then capture as we'll want to decrement
+    // the counts for these in the metadata we have
+    const unseenCount = normalizedItems.filter((i) => !i.seen_at).length;
+    const unreadCount = normalizedItems.filter((i) => !i.read_at).length;
+
+    // Build the new metadata
+    const meta = {
+      ...state.metadata,
+      total_count: state.metadata.total_count - normalizedItems.length,
+      unseen_count: state.metadata.unseen_count - unseenCount,
+      unread_count: state.metadata.unread_count - unreadCount,
+    };
+
+    // Perform optimistic updates on the items in the feed
+    if (shouldRemoveItems) {
+      // Filter the items out of the list
+      const entries = state.items.filter((item) => !itemIds.includes(item.id));
+
+      setState((state) =>
+        state.setResult({ entries, meta, page_info: state.pageInfo }),
+      );
+    } else {
+      setState((state) => {
+        state.setMetadata(meta);
+        state.setItemAttrs(itemIds, { archived_at: new Date().toISOString() });
+      });
+    }
+
     return this.makeStatusUpdate(itemOrItems, "archived");
   }
 
@@ -145,10 +188,19 @@ class Feed {
   }
 
   /* Fetches the feed content, appending it to the store */
-  async fetch(options: FeedClientOptions = {}) {
-    const { setState } = this.store;
+  async fetch(options: FetchFeedOptions = {}) {
+    const { setState, getState } = this.store;
+    const { networkStatus } = getState();
 
-    setState((store) => store.setLoading(true));
+    // If there's an existing request in flight, then do nothing
+    if (isRequestInFlight(networkStatus)) {
+      return;
+    }
+
+    // Set the loading type based on the request type it is
+    setState((store) =>
+      store.setNetworkStatus(options.__loadingType ?? NetworkStatus.loading),
+    );
 
     // Always include the default params, if they have been set
     const queryParams = { ...this.defaultOptions, ...options };
@@ -160,7 +212,7 @@ class Feed {
     });
 
     if (result.statusCode === "error") {
-      setState((store) => store.setLoading(false));
+      setState((store) => store.setNetworkStatus(NetworkStatus.error));
 
       return {
         status: result.statusCode,
@@ -198,7 +250,10 @@ class Feed {
       return;
     }
 
-    this.fetch({ after: pageInfo.after });
+    this.fetch({
+      after: pageInfo.after,
+      __loadingType: NetworkStatus.fetchMore,
+    });
   }
 
   private broadcast(eventName: FeedRealTimeEvent, data: any) {
@@ -236,6 +291,8 @@ class Feed {
     if (badgeCountAttr) {
       const { metadata } = getState();
 
+      // Tnis is a hack to determine the direction of whether we're
+      // adding or removing from the badge count
       const direction = type.startsWith("un")
         ? itemIds.length
         : -itemIds.length;

@@ -1,4 +1,5 @@
 import { Activity, GenericData, User, PageInfo } from "../../interfaces";
+import { NetworkStatus } from "../../networkStatus";
 
 // Specific feed interfaces
 
@@ -13,6 +14,10 @@ export interface FeedClientOptions {
   tenant?: string;
   include_archived?: boolean;
 }
+
+export type FetchFeedOptions = {
+  __loadingType?: NetworkStatus.loading | NetworkStatus.fetchMore;
+} & FeedClientOptions;
 
 export interface ContentBlock {
   content: string;
