@@ -157,6 +157,7 @@ class Feed {
     // Build the new metadata
     const meta = {
       ...state.metadata,
+      total_count: state.metadata.total_count - normalizedItems.length,
       unseen_count: state.metadata.unseen_count - unseenCount,
       unread_count: state.metadata.unread_count - unreadCount,
     };
