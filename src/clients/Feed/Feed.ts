@@ -130,11 +130,52 @@ class Feed {
     return this.makeStatusUpdate(itemOrItems, "unread");
   }
 
+  /*
+  Marking one or more items as archived should:
+
+  - Decrement the badge count for any unread / unseen items
+  - Remove the item from the feed list, when the include_archived flag is not true)
+
+  TODO: how do we handle rollbacks?
+  */
   async markAsArchived(itemOrItems: FeedItemOrItems) {
-    const now = new Date().toISOString();
-    this.optimisticallyPerformStatusUpdate(itemOrItems, "archived", {
-      archived_at: now,
-    });
+    const { getState, setState } = this.store;
+    const state = getState();
+    const shouldRemoveItems = this.defaultOptions.include_archived !== true;
+
+    const normalizedItems = Array.isArray(itemOrItems)
+      ? itemOrItems
+      : [itemOrItems];
+
+    const itemIds: string[] = normalizedItems.map((item) => item.id);
+
+    // If any of the items are unseen or unread, then capture as we'll want to decrement
+    // the counts for these in the metadata we have
+    const unseenCount = normalizedItems.filter((i) => !i.seen_at).length;
+    const unreadCount = normalizedItems.filter((i) => !i.read_at).length;
+
+    // Build the new metadata
+    const meta = {
+      ...state.metadata,
+      unseen_count: state.metadata.unseen_count - unseenCount,
+      unread_count: state.metadata.unread_count - unreadCount,
+    };
+
+    // Perform optimistic updates on the items in the feed
+    if (shouldRemoveItems) {
+      // Filter the items out of the list
+      const entries = state.items.filter((item) => !itemIds.includes(item.id));
+
+      setState((state) =>
+        state.setResult({ entries, meta, page_info: state.pageInfo }),
+      );
+    } else {
+      setState((state) => {
+        state.setMetadata(meta);
+        state.setItemAttrs(itemIds, { archived_at: new Date().toISOString() });
+      });
+    }
+
     return this.makeStatusUpdate(itemOrItems, "archived");
   }
 
