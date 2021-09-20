@@ -1,6 +1,6 @@
 {
   "name": "@knocklabs/client",
-  "version": "0.4.5-rc.3",
+  "version": "0.5.0",
   "description": "The clientside library for interacting with Knock",
   "homepage": "https://github.com/knocklabs/knock-client-js",
   "author": "@knocklabs",
