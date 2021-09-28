@@ -1,6 +1,6 @@
 {
   "name": "@knocklabs/client",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "The clientside library for interacting with Knock",
   "homepage": "https://github.com/knocklabs/knock-client-js",
   "author": "@knocklabs",
@@ -60,7 +60,7 @@
     "axios": "^0.21.4",
     "axios-retry": "^3.1.9",
     "eventemitter3": "^4.0.7",
-    "phoenix": "^1.5.8",
+    "phoenix": "1.5.8",
     "zustand": "^3.5.10"
   }
 }
