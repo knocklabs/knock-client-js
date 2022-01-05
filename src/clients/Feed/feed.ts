@@ -5,6 +5,7 @@ import ApiClient from "../../api";
 import createStore from "./store";
 import {
   FeedMessagesReceivedPayload,
+  FeedRealTimeCallback,
   FeedRealTimeEvent,
   FeedItemOrItems,
   FeedStoreState,
@@ -76,11 +77,11 @@ class Feed {
   }
 
   /* Binds a handler to be invoked when event occurs */
-  on(eventName: FeedRealTimeEvent, callback: () => void) {
+  on(eventName: FeedRealTimeEvent, callback: FeedRealTimeCallback) {
     this.broadcaster.on(eventName, callback);
   }
 
-  off(eventName: FeedRealTimeEvent, callback: () => void) {
+  off(eventName: FeedRealTimeEvent, callback: FeedRealTimeCallback) {
     this.broadcaster.off(eventName, callback);
   }
 
@@ -266,7 +267,8 @@ class Feed {
   }: FeedMessagesReceivedPayload) {
     // Handle the new message coming in
     const { getState, setState } = this.store;
-    const currentHead: FeedItem | undefined = getState().items[0];
+    const { items } = getState();
+    const currentHead: FeedItem | undefined = items[0];
     // Optimistically set the badge counts
     setState((state) => state.setMetadata(metadata));
     // Fetch the items before the current head (if it exists)

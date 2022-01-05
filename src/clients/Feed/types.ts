@@ -26,4 +26,6 @@ export type FeedMessagesReceivedPayload = {
 
 export type FeedRealTimeEvent = "messages.new";
 
+export type FeedRealTimeCallback = (resp: FeedResponse) => void;
+
 export type FeedItemOrItems = FeedItem | FeedItem[];
