@@ -10,7 +10,12 @@ import {
   FeedItemOrItems,
   FeedStoreState,
 } from "./types";
-import { FeedItem, FeedClientOptions, FetchFeedOptions } from "./interfaces";
+import {
+  FeedItem,
+  FeedClientOptions,
+  FetchFeedOptions,
+  FeedResponse,
+} from "./interfaces";
 import Knock from "../../knock";
 import { isRequestInFlight, NetworkStatus } from "../../networkStatus";
 
@@ -25,7 +30,7 @@ export type Status =
 class Feed {
   private apiClient: ApiClient;
   private userFeedId: string;
-  private channelConnected: boolean = false;
+  private channelConnected = false;
   private channel: Channel;
   private broadcaster: EventEmitter;
   private defaultOptions: FeedClientOptions;
@@ -212,7 +217,7 @@ class Feed {
       params: queryParams,
     });
 
-    if (result.statusCode === "error") {
+    if (result.statusCode === "error" || !result.body) {
       setState((store) => store.setNetworkStatus(NetworkStatus.error));
 
       return {
@@ -257,7 +262,7 @@ class Feed {
     });
   }
 
-  private broadcast(eventName: FeedRealTimeEvent, data: any) {
+  private broadcast(eventName: FeedRealTimeEvent, data: FeedResponse) {
     this.broadcaster.emit(eventName, data);
   }
 

@@ -10,7 +10,9 @@ type ApiClientOptions = {
 };
 
 export interface ApiResponse {
+  // eslint-disable-next-line
   error?: any;
+  // eslint-disable-next-line
   body?: any;
   statusCode: "ok" | "error";
   status: number;
@@ -22,7 +24,7 @@ class ApiClient {
   private userToken: string | null;
   private axiosClient: AxiosInstance;
   private socket: Socket;
-  public socketConnected: boolean = false;
+  public socketConnected = false;
 
   constructor(options: ApiClientOptions) {
     this.host = options.host;
@@ -84,8 +86,9 @@ class ApiClient {
         error: undefined,
         status: result.status,
       };
-    } catch (e) {
-      // tslint:disable-next-line
+
+      // eslint:disable-next-line
+    } catch (e: unknown) {
       console.error(e);
 
       return {
