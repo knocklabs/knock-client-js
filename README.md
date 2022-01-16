@@ -68,8 +68,11 @@ const feedClient = knockClient.feeds.initialize(
 const teardown = feedClient.listenForUpdates();
 
 // Setup a callback for when a batch of messages is received (including on first load)
-feedClient.on("messages.new", ({ entries }) => {
-  console.log(entries);
+feedClient.on("messages.new", ({ entries, triggeredBy }) => {
+  // Filter messages if you only interested in updates via socket
+  if (triggeredBy === "socket") {
+    console.log(entries);
+  }
 });
 
 // Fetch the feed items
