@@ -15,8 +15,11 @@ export interface FeedClientOptions {
   include_archived?: boolean;
 }
 
+export type TriggeredBy = "socket" | "user";
+
 export type FetchFeedOptions = {
   __loadingType?: NetworkStatus.loading | NetworkStatus.fetchMore;
+  __triggeredBy?: TriggeredBy;
 } & FeedClientOptions;
 
 export interface ContentBlock {

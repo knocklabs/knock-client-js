@@ -9,6 +9,7 @@ import {
   FeedRealTimeEvent,
   FeedItemOrItems,
   FeedStoreState,
+  FeedRealTimeCallbackPayload,
 } from "./types";
 import {
   FeedItem,
@@ -242,7 +243,10 @@ class Feed {
       setState((state) => state.setResult(response));
     }
 
-    this.broadcast("messages.new", response);
+    this.broadcast("messages.new", {
+      ...response,
+      triggeredBy: options.__triggeredBy,
+    });
     return { data: response, status: result.statusCode };
   }
 
@@ -262,7 +266,7 @@ class Feed {
     });
   }
 
-  private broadcast(eventName: FeedRealTimeEvent, data: FeedResponse) {
+  private broadcast(eventName: FeedRealTimeEvent, data: FeedRealTimeCallbackPayload) {
     this.broadcaster.emit(eventName, data);
   }
 
@@ -277,7 +281,10 @@ class Feed {
     // Optimistically set the badge counts
     setState((state) => state.setMetadata(metadata));
     // Fetch the items before the current head (if it exists)
-    this.fetch({ before: currentHead?.__cursor });
+    this.fetch({
+      before: currentHead?.__cursor,
+      __triggeredBy: "socket",
+    });
   }
 
   private buildUserFeedId() {

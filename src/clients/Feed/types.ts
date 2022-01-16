@@ -1,6 +1,6 @@
 import { PageInfo } from "../../interfaces";
 import { NetworkStatus } from "../../networkStatus";
-import { FeedItem, FeedMetadata, FeedResponse } from "./interfaces";
+import { FeedItem, FeedMetadata, FeedResponse, TriggeredBy } from "./interfaces";
 
 export type StoreFeedResultOptions = {
   shouldSetPage?: boolean;
@@ -24,8 +24,12 @@ export type FeedMessagesReceivedPayload = {
   metadata: FeedMetadata;
 };
 
+export type FeedRealTimeCallbackPayload = {
+  triggeredBy?: TriggeredBy;
+} & FeedResponse;
+
 export type FeedRealTimeEvent = "messages.new";
 
-export type FeedRealTimeCallback = (resp: FeedResponse) => void;
+export type FeedRealTimeCallback = (resp: FeedRealTimeCallbackPayload) => void;
 
 export type FeedItemOrItems = FeedItem | FeedItem[];
