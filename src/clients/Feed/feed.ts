@@ -10,7 +10,7 @@ import {
   FeedItemOrItems,
   FeedStoreState,
   FeedEventPayload,
-  NewMessagesFeedEventCallback,
+  FeedRealTimeCallback,
 } from "./types";
 import {
   FeedItem,
@@ -85,16 +85,13 @@ class Feed {
   }
 
   /* Binds a handler to be invoked when event occurs */
-  on(
-    eventName: FeedEvent,
-    callback: FeedEventCallback | NewMessagesFeedEventCallback,
-  ) {
+  on(eventName: FeedEvent, callback: FeedEventCallback | FeedRealTimeCallback) {
     this.broadcaster.on(eventName, callback);
   }
 
   off(
     eventName: FeedEvent,
-    callback: FeedEventCallback | NewMessagesFeedEventCallback,
+    callback: FeedEventCallback | FeedRealTimeCallback,
   ) {
     this.broadcaster.off(eventName, callback);
   }

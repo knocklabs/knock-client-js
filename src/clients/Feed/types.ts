@@ -31,7 +31,8 @@ Event types:
 - `items.new`: all real-time items received via a socket update
 - `items.fetched`: invoked every time a page is fetched (like on initial load)
 */
-export type FeedEvent = "messages.new" | "items.new" | "items.fetched";
+export type FeedRealTimeEvent = "messages.new";
+export type FeedEvent = FeedRealTimeEvent | "items.new" | "items.fetched";
 
 export type FeedEventPayload = {
   event: Omit<FeedEvent, "messages.new">;
@@ -39,7 +40,7 @@ export type FeedEventPayload = {
   metadata: FeedMetadata;
 };
 
-export type NewMessagesFeedEventCallback = (resp: FeedResponse) => void;
+export type FeedRealTimeCallback = (resp: FeedResponse) => void;
 
 export type FeedEventCallback = (payload: FeedEventPayload) => void;
 
