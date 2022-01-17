@@ -46,7 +46,7 @@ export interface FeedItem {
   seen_at: string | null;
   total_activities: number;
   total_actors: number;
-  data: GenericData;
+  data: GenericData | null;
   source: NotificationSource;
 }
 
