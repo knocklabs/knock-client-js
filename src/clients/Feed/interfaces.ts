@@ -45,7 +45,7 @@ export interface FeedItem<T = GenericData> {
   archived_at: string | null;
   total_activities: number;
   total_actors: number;
-  data: T;
+  data: T | null;
   source: NotificationSource;
 }
 

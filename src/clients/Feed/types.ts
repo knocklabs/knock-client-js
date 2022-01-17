@@ -28,15 +28,15 @@ export type FeedMessagesReceivedPayload = {
 Event types:
 
 - `messages.new`: legacy event fired for all messages (feed items) received, real-time or not
-- `items.new`: all real-time items received
+- `items.new`: all real-time items received via a socket update
 - `items.fetched`: invoked every time a page is fetched (like on initial load)
 */
 export type FeedEvent = "messages.new" | "items.new" | "items.fetched";
 
 export type FeedEventPayload = {
-  event: FeedEvent;
+  event: Omit<FeedEvent, "messages.new">;
   items: FeedItem[];
-  metadata?: FeedMetadata;
+  metadata: FeedMetadata;
 };
 
 export type NewMessagesFeedEventCallback = (resp: FeedResponse) => void;
