@@ -5,16 +5,19 @@ import ApiClient from "../../api";
 import createStore from "./store";
 import {
   FeedMessagesReceivedPayload,
-  FeedRealTimeCallback,
-  FeedRealTimeEvent,
+  FeedEventCallback,
+  FeedEvent,
   FeedItemOrItems,
   FeedStoreState,
+  FeedEventPayload,
+  NewMessagesFeedEventCallback,
 } from "./types";
 import {
   FeedItem,
   FeedClientOptions,
   FetchFeedOptions,
   FeedResponse,
+  FeedMetadata,
 } from "./interfaces";
 import Knock from "../../knock";
 import { isRequestInFlight, NetworkStatus } from "../../networkStatus";
@@ -82,11 +85,17 @@ class Feed {
   }
 
   /* Binds a handler to be invoked when event occurs */
-  on(eventName: FeedRealTimeEvent, callback: FeedRealTimeCallback) {
+  on(
+    eventName: FeedEvent,
+    callback: FeedEventCallback | NewMessagesFeedEventCallback,
+  ) {
     this.broadcaster.on(eventName, callback);
   }
 
-  off(eventName: FeedRealTimeEvent, callback: FeedRealTimeCallback) {
+  off(
+    eventName: FeedEvent,
+    callback: FeedEventCallback | NewMessagesFeedEventCallback,
+  ) {
     this.broadcaster.off(eventName, callback);
   }
 
@@ -242,7 +251,22 @@ class Feed {
       setState((state) => state.setResult(response));
     }
 
+    // Legacy `messages.new` event, should be removed in a future version
     this.broadcast("messages.new", response);
+
+    // Broadcast either the fetch event, or the items.new event depending on the source
+    // of the fetch.
+    const feedEventType: FeedEvent =
+      options.__fetchSource === "socket" ? "items.new" : "items.fetched";
+
+    const eventPayload = {
+      items: response.entries as FeedItem[],
+      metadata: response.meta as FeedMetadata,
+      event: feedEventType,
+    };
+
+    this.broadcast(eventPayload.event, eventPayload);
+
     return { data: response, status: result.statusCode };
   }
 
@@ -262,7 +286,10 @@ class Feed {
     });
   }
 
-  private broadcast(eventName: FeedRealTimeEvent, data: FeedResponse) {
+  private broadcast(
+    eventName: FeedEvent,
+    data: FeedResponse | FeedEventPayload,
+  ) {
     this.broadcaster.emit(eventName, data);
   }
 
@@ -277,7 +304,7 @@ class Feed {
     // Optimistically set the badge counts
     setState((state) => state.setMetadata(metadata));
     // Fetch the items before the current head (if it exists)
-    this.fetch({ before: currentHead?.__cursor });
+    this.fetch({ before: currentHead?.__cursor, __fetchSource: "socket" });
   }
 
   private buildUserFeedId() {

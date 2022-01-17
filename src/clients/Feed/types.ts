@@ -24,8 +24,23 @@ export type FeedMessagesReceivedPayload = {
   metadata: FeedMetadata;
 };
 
-export type FeedRealTimeEvent = "messages.new";
+/*
+Event types:
 
-export type FeedRealTimeCallback = (resp: FeedResponse) => void;
+- `messages.new`: legacy event fired for all messages (feed items) received, real-time or not
+- `items.new`: all real-time items received
+- `items.fetched`: invoked every time a page is fetched (like on initial load)
+*/
+export type FeedEvent = "messages.new" | "items.new" | "items.fetched";
+
+export type FeedEventPayload = {
+  event: FeedEvent;
+  items: FeedItem[];
+  metadata?: FeedMetadata;
+};
+
+export type NewMessagesFeedEventCallback = (resp: FeedResponse) => void;
+
+export type FeedEventCallback = (payload: FeedEventPayload) => void;
 
 export type FeedItemOrItems = FeedItem | FeedItem[];
