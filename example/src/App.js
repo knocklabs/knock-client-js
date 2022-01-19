@@ -44,7 +44,7 @@ function App() {
       console.log(data);
     });
 
-    feedClient.on("items.new", (data) => {
+    feedClient.on("items.received.*", (data) => {
       console.log(data);
     });
 

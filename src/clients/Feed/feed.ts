@@ -1,9 +1,10 @@
 import { Channel } from "phoenix";
 import { StoreApi } from "zustand";
-import EventEmitter from "eventemitter3";
+import { EventEmitter2 as EventEmitter } from "eventemitter2";
 import ApiClient from "../../api";
 import createStore from "./store";
 import {
+  BindableFeedEvent,
   FeedMessagesReceivedPayload,
   FeedEventCallback,
   FeedEvent,
@@ -50,7 +51,7 @@ class Feed {
     this.feedId = feedId;
     this.userFeedId = this.buildUserFeedId();
     this.store = createStore();
-    this.broadcaster = new EventEmitter();
+    this.broadcaster = new EventEmitter({ wildcard: true });
     this.defaultOptions = options;
 
     // Try and connect to the socket
@@ -85,12 +86,15 @@ class Feed {
   }
 
   /* Binds a handler to be invoked when event occurs */
-  on(eventName: FeedEvent, callback: FeedEventCallback | FeedRealTimeCallback) {
+  on(
+    eventName: BindableFeedEvent,
+    callback: FeedEventCallback | FeedRealTimeCallback,
+  ) {
     this.broadcaster.on(eventName, callback);
   }
 
   off(
-    eventName: FeedEvent,
+    eventName: BindableFeedEvent,
     callback: FeedEventCallback | FeedRealTimeCallback,
   ) {
     this.broadcaster.off(eventName, callback);
@@ -251,10 +255,11 @@ class Feed {
     // Legacy `messages.new` event, should be removed in a future version
     this.broadcast("messages.new", response);
 
-    // Broadcast either the fetch event, or the items.new event depending on the source
-    // of the fetch.
+    // Broadcast the appropriate event type depending on the fetch source
     const feedEventType: FeedEvent =
-      options.__fetchSource === "socket" ? "items.new" : "items.fetched";
+      options.__fetchSource === "socket"
+        ? "items.received.realtime"
+        : "items.received.page";
 
     const eventPayload = {
       items: response.entries as FeedItem[],
