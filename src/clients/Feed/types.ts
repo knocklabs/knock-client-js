@@ -28,7 +28,7 @@ export type FeedMessagesReceivedPayload = {
 Event types:
 - `messages.new`: legacy event fired for all messages (feed items) received, real-time or not
 - `items.received.realtime`: all real-time items received via a socket update
-- `items.received.fetched`: invoked every time a page is fetched (like on initial load)
+- `items.received.page`: invoked every time a page is fetched (like on initial load)
 */
 export type FeedRealTimeEvent = "messages.new";
 
