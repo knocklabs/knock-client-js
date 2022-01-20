@@ -51,7 +51,7 @@ class Feed {
     this.feedId = feedId;
     this.userFeedId = this.buildUserFeedId();
     this.store = createStore();
-    this.broadcaster = new EventEmitter({ wildcard: true });
+    this.broadcaster = new EventEmitter({ wildcard: true, delimiter: "." });
     this.defaultOptions = options;
 
     // Try and connect to the socket
