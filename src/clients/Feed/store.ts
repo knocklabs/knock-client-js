@@ -69,6 +69,7 @@ export default function createStore() {
       }),
 
     setMetadata: (metadata) => set(() => ({ metadata })),
+
     setItemAttrs: (itemIds, attrs) => {
       // Create a map for the items to the updates to be made
       const itemUpdatesMap: { [id: string]: object } = itemIds.reduce(

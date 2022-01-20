@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import "./App.css";
 import Knock from "@knocklabs/client";
 import create from "zustand";
@@ -21,7 +21,6 @@ const useNotificationFeed = (knockClient, feedId) => {
 };
 
 function App() {
-  const [prefs, setPrefs] = useState();
   const [feedClient, feedStore] = useNotificationFeed(
     knockClient,
     process.env.REACT_APP_KNOCK_CHANNEL_ID,
@@ -42,6 +41,10 @@ function App() {
     const teardown = feedClient.listenForUpdates();
 
     feedClient.on("messages.new", (data) => {
+      console.log(data);
+    });
+
+    feedClient.on("items.received.*", (data) => {
       console.log(data);
     });
 

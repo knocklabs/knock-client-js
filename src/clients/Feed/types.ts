@@ -24,8 +24,30 @@ export type FeedMessagesReceivedPayload = {
   metadata: FeedMetadata;
 };
 
+/*
+Event types:
+- `messages.new`: legacy event fired for all messages (feed items) received, real-time or not
+- `items.received.realtime`: all real-time items received via a socket update
+- `items.received.page`: invoked every time a page is fetched (like on initial load)
+*/
 export type FeedRealTimeEvent = "messages.new";
 
+export type FeedEvent =
+  | FeedRealTimeEvent
+  | "items.received.page"
+  | "items.received.realtime";
+
+// Because we can bind to wild card feed events, this is here to accomodate
+export type BindableFeedEvent = FeedEvent | "items.received.*";
+
+export type FeedEventPayload = {
+  event: Omit<FeedEvent, "messages.new">;
+  items: FeedItem[];
+  metadata: FeedMetadata;
+};
+
 export type FeedRealTimeCallback = (resp: FeedResponse) => void;
+
+export type FeedEventCallback = (payload: FeedEventPayload) => void;
 
 export type FeedItemOrItems = FeedItem | FeedItem[];

@@ -67,9 +67,19 @@ const feedClient = knockClient.feeds.initialize(
 // Connect to the real-time socket
 const teardown = feedClient.listenForUpdates();
 
-// Setup a callback for when a batch of messages is received (including on first load)
-feedClient.on("messages.new", ({ entries }) => {
-  console.log(entries);
+// Setup a callback for when a batch of items is received (including on first load and subsequent page load)
+feedClient.on("items.received.page", ({ items }) => {
+  console.log(items);
+});
+
+// Setup a callback for when new items arrive in real-time
+feedClient.on("items.received.realtime", ({ items }) => {
+  console.log(items);
+});
+
+// Listen to all received items
+feedClient.on("items.received.*", ({ items }) => {
+  console.log(items);
 });
 
 // Fetch the feed items

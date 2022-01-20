@@ -17,6 +17,7 @@ export interface FeedClientOptions {
 
 export type FetchFeedOptions = {
   __loadingType?: NetworkStatus.loading | NetworkStatus.fetchMore;
+  __fetchSource?: "socket" | "http";
 } & FeedClientOptions;
 
 export interface ContentBlock {
@@ -31,7 +32,7 @@ export interface NotificationSource {
   version_id: string;
 }
 
-export interface FeedItem {
+export interface FeedItem<T = GenericData> {
   __cursor: string;
   id: string;
   activities: Activity[];
@@ -41,9 +42,10 @@ export interface FeedItem {
   updated_at: string;
   read_at: string | null;
   seen_at: string | null;
+  archived_at: string | null;
   total_activities: number;
   total_actors: number;
-  data: GenericData;
+  data: T | null;
   source: NotificationSource;
 }
 

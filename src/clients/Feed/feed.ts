@@ -1,20 +1,24 @@
 import { Channel } from "phoenix";
 import { StoreApi } from "zustand";
-import EventEmitter from "eventemitter3";
+import { EventEmitter2 as EventEmitter } from "eventemitter2";
 import ApiClient from "../../api";
 import createStore from "./store";
 import {
+  BindableFeedEvent,
   FeedMessagesReceivedPayload,
-  FeedRealTimeCallback,
-  FeedRealTimeEvent,
+  FeedEventCallback,
+  FeedEvent,
   FeedItemOrItems,
   FeedStoreState,
+  FeedEventPayload,
+  FeedRealTimeCallback,
 } from "./types";
 import {
   FeedItem,
   FeedClientOptions,
   FetchFeedOptions,
   FeedResponse,
+  FeedMetadata,
 } from "./interfaces";
 import Knock from "../../knock";
 import { isRequestInFlight, NetworkStatus } from "../../networkStatus";
@@ -47,7 +51,7 @@ class Feed {
     this.feedId = feedId;
     this.userFeedId = this.buildUserFeedId();
     this.store = createStore();
-    this.broadcaster = new EventEmitter();
+    this.broadcaster = new EventEmitter({ wildcard: true, delimiter: "." });
     this.defaultOptions = options;
 
     // Try and connect to the socket
@@ -82,11 +86,17 @@ class Feed {
   }
 
   /* Binds a handler to be invoked when event occurs */
-  on(eventName: FeedRealTimeEvent, callback: FeedRealTimeCallback) {
+  on(
+    eventName: BindableFeedEvent,
+    callback: FeedEventCallback | FeedRealTimeCallback,
+  ) {
     this.broadcaster.on(eventName, callback);
   }
 
-  off(eventName: FeedRealTimeEvent, callback: FeedRealTimeCallback) {
+  off(
+    eventName: BindableFeedEvent,
+    callback: FeedEventCallback | FeedRealTimeCallback,
+  ) {
     this.broadcaster.off(eventName, callback);
   }
 
@@ -242,7 +252,23 @@ class Feed {
       setState((state) => state.setResult(response));
     }
 
+    // Legacy `messages.new` event, should be removed in a future version
     this.broadcast("messages.new", response);
+
+    // Broadcast the appropriate event type depending on the fetch source
+    const feedEventType: FeedEvent =
+      options.__fetchSource === "socket"
+        ? "items.received.realtime"
+        : "items.received.page";
+
+    const eventPayload = {
+      items: response.entries as FeedItem[],
+      metadata: response.meta as FeedMetadata,
+      event: feedEventType,
+    };
+
+    this.broadcast(eventPayload.event, eventPayload);
+
     return { data: response, status: result.statusCode };
   }
 
@@ -262,7 +288,10 @@ class Feed {
     });
   }
 
-  private broadcast(eventName: FeedRealTimeEvent, data: FeedResponse) {
+  private broadcast(
+    eventName: FeedEvent,
+    data: FeedResponse | FeedEventPayload,
+  ) {
     this.broadcaster.emit(eventName, data);
   }
 
@@ -277,7 +306,7 @@ class Feed {
     // Optimistically set the badge counts
     setState((state) => state.setMetadata(metadata));
     // Fetch the items before the current head (if it exists)
-    this.fetch({ before: currentHead?.__cursor });
+    this.fetch({ before: currentHead?.__cursor, __fetchSource: "socket" });
   }
 
   private buildUserFeedId() {
