@@ -7,6 +7,14 @@ export type GenericData = {
   [x: string]: any;
 };
 
+export interface KnockObject<T = GenericData> {
+  id: string;
+  collection: string;
+  properties: T;
+  updated_at: string;
+  created_at: string | null;
+}
+
 export interface User extends GenericData {
   id: string;
   email: string;
