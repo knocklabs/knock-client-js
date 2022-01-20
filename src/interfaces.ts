@@ -1,24 +1,11 @@
-export type JsonValue =
-  | string
-  | number
-  | boolean
-  | JsonObject
-  | JsonArray
-  | null
-  | undefined;
-
-export interface JsonObject {
-  [x: string]: JsonValue;
-}
-
-export type JsonArray = Array<JsonValue>;
-
 export interface KnockOptions {
   host?: string;
 }
 
-// Left here to not break any usage
-export type GenericData = JsonObject;
+export type GenericData = {
+  // eslint-disable-next-line
+  [x: string]: any;
+};
 
 export interface User extends GenericData {
   id: string;
