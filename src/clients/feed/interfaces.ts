@@ -7,7 +7,7 @@ export interface FeedClientOptions {
   before?: string;
   after?: string;
   page_size?: number;
-  status?: "unread" | "unseen" | "all";
+  status?: "unread" | "read" | "unseen" | "seen" | "all";
   // Optionally scope all notifications to a particular source only
   source?: string;
   // Optionally scope all requests to a particular tenant
