@@ -55,9 +55,9 @@ class Feed {
     this.defaultOptions = options;
 
     // Try and connect to the socket
-    this.apiClient.connectSocket();
+    this.apiClient.socket.connect();
 
-    this.channel = this.apiClient.createChannel(
+    this.channel = this.apiClient.socket.channel(
       `feeds:${this.userFeedId}`,
       this.defaultOptions,
     );
