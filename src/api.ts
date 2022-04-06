@@ -23,8 +23,12 @@ class ApiClient {
   private apiKey: string;
   private userToken: string | null;
   private axiosClient: AxiosInstance;
-  private socket: Socket;
+
+  /**
+   * @deprecated Use `socket.connectionState` instead.
+   */
   public socketConnected = false;
+  public socket: Socket;
 
   constructor(options: ApiClientOptions) {
     this.host = options.host;
@@ -56,6 +60,9 @@ class ApiClient {
     });
   }
 
+  /**
+   * @deprecated Use `socket.connect()` instead.
+   */
   connectSocket() {
     if (this.socketConnected) {
       return;
@@ -67,11 +74,18 @@ class ApiClient {
     });
   }
 
+  /**
+   * @deprecated Use `socket.disconnect()` instead.
+   */
   disconnectSocket() {
     this.socket.disconnect();
+    this.socketConnected = false;
     return;
   }
 
+  /**
+   * @deprecated Use `socket.channel(name: string, params?: object)` instead.
+   */
   createChannel(name: string, params?: object) {
     return this.socket.channel(name, params);
   }
