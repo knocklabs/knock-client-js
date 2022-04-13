@@ -3,7 +3,7 @@
 export type ChannelType = "email" | "in_app_feed" | "sms" | "push" | "chat";
 
 export type ChannelTypePreferences = {
-  [K in ChannelType]: boolean;
+  [K in ChannelType]?: boolean;
 };
 
 export type WorkflowPreferenceSetting =
