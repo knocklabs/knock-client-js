@@ -34,7 +34,6 @@ export type Status =
 class Feed {
   private apiClient: ApiClient;
   private userFeedId: string;
-  private channelConnected = false;
   private channel: Channel;
   private broadcaster: EventEmitter;
   private defaultOptions: FeedClientOptions;
@@ -67,17 +66,24 @@ class Feed {
     Returns a socket to listen for feed updates
   */
   listenForUpdates() {
-    if (!this.channelConnected) {
-      this.channel.join().receive("ok", () => {
-        this.channelConnected = true;
-      });
-
-      this.channel.on("new-message", (resp) => this.onNewMessageReceived(resp));
+    try {
+      this.channel.join();
+    } catch (e) {
+      // Phoenix raises an error when trying to call join more than once. Given calling listenForUpdates unintentionally
+      // may happen fairly often, we choose to supress the error and print a warning.
+      if (e.message.includes("join")) {
+        console.warn(e.message);
+      } else {
+        throw e;
+      }
     }
+
+    this.channel.on("new-message", (resp) => this.onNewMessageReceived(resp));
 
     return () => {
       try {
         this.channel.leave();
+        this.channel.off("new-message")
       } catch (e) {
         // tslint:disable-next-line
         console.error("error while leaving channel", e);
