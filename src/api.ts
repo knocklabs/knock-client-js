@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import axiosRetry from "axios-retry";
-import { Socket } from "phoenix";
+import { LongPoll, Socket } from "phoenix";
 import { AxiosError } from "axios";
 
 type ApiClientOptions = {
@@ -24,10 +24,6 @@ class ApiClient {
   private userToken: string | null;
   private axiosClient: AxiosInstance;
 
-  /**
-   * @deprecated Use `socket.connectionState` instead.
-   */
-  public socketConnected = false;
   public socket: Socket;
 
   constructor(options: ApiClientOptions) {
@@ -47,6 +43,8 @@ class ApiClient {
     });
 
     this.socket = new Socket(`${this.host.replace("http", "ws")}/ws/v1`, {
+      // If we're in a non-browser environment, then fallback to longpolling
+      transport: typeof window === "undefined" ? LongPoll : window.WebSocket,
       params: {
         user_token: this.userToken,
         api_key: this.apiKey,
@@ -58,36 +56,6 @@ class ApiClient {
       retryCondition: this.canRetryRequest,
       retryDelay: axiosRetry.exponentialDelay,
     });
-  }
-
-  /**
-   * @deprecated Use `socket.connect()` instead.
-   */
-  connectSocket() {
-    if (this.socketConnected) {
-      return;
-    }
-
-    this.socket.connect();
-    this.socket.onOpen(() => {
-      this.socketConnected = true;
-    });
-  }
-
-  /**
-   * @deprecated Use `socket.disconnect()` instead.
-   */
-  disconnectSocket() {
-    this.socket.disconnect();
-    this.socketConnected = false;
-    return;
-  }
-
-  /**
-   * @deprecated Use `socket.channel(name: string, params?: object)` instead.
-   */
-  createChannel(name: string, params?: object) {
-    return this.socket.channel(name, params);
   }
 
   async makeRequest(req: AxiosRequestConfig): Promise<ApiResponse> {
