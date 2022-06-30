@@ -61,10 +61,7 @@ class Knock {
 
   // Used to teardown any connected instances
   teardown() {
-    if (!this.apiClient) {
-      return;
-    }
-
+    if (!this.apiClient) return;
     this.apiClient.socket.disconnect();
   }
 }

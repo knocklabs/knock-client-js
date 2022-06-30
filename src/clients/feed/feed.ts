@@ -53,42 +53,39 @@ class Feed {
     this.broadcaster = new EventEmitter({ wildcard: true, delimiter: "." });
     this.defaultOptions = options;
 
-    // Try and connect to the socket
-    this.apiClient.socket.connect();
-
     this.channel = this.apiClient.socket.channel(
       `feeds:${this.userFeedId}`,
       this.defaultOptions,
     );
+
+    this.channel.on("new-message", (resp) => this.onNewMessageReceived(resp));
+  }
+
+  /**
+   * Cleans up a feed instance by destroying the store and disconnecting
+   * an open socket connection.
+   */
+  teardown() {
+    this.channel.leave();
+    this.broadcaster.removeAllListeners();
+    this.channel.off("new-message");
+    this.store.destroy();
   }
 
   /*
-    Returns a socket to listen for feed updates
+    Initializes a real-time connection to Knock, connecting the websocket for the
+    current ApiClient instance if the socket is not already connected.
   */
   listenForUpdates() {
-    try {
-      this.channel.join();
-    } catch (e) {
-      // Phoenix raises an error when trying to call join more than once. Given calling listenForUpdates unintentionally
-      // may happen fairly often, we choose to supress the error and print a warning.
-      if (e.message.includes("join")) {
-        console.warn(e.message);
-      } else {
-        throw e;
-      }
+    // Connect the socket only if we don't already have a connection
+    if (!this.apiClient.socket.isConnected()) {
+      this.apiClient.socket.connect();
     }
 
-    this.channel.on("new-message", (resp) => this.onNewMessageReceived(resp));
-
-    return () => {
-      try {
-        this.channel.leave();
-        this.channel.off("new-message")
-      } catch (e) {
-        // tslint:disable-next-line
-        console.error("error while leaving channel", e);
-      }
-    };
+    // Only join the channel if we're not already in a joining state
+    if (["closed", "errored"].includes(this.channel.state)) {
+      this.channel.join();
+    }
   }
 
   /* Binds a handler to be invoked when event occurs */
