@@ -2562,7 +2562,7 @@ yallist@^4.0.0:
   resolved "https://registry.yarnpkg.com/yallist/-/yallist-4.0.0.tgz#9bb92790d9c0effec63be73519e11a35019a3a72"
   integrity sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==
 
-zustand@^3.5.10:
-  version "3.5.10"
-  resolved "https://registry.yarnpkg.com/zustand/-/zustand-3.5.10.tgz#d2622efd64530ffda285ee5b13ff645b68ab0faf"
-  integrity sha512-upluvSRWrlCiExu2UbkuMIPJ9AigyjRFoO7O9eUossIj7rPPq7pcJ0NKk6t2P7KF80tg/UdPX6/pNKOSbs9DEg==
+zustand@^3.7.2:
+  version "3.7.2"
+  resolved "https://registry.yarnpkg.com/zustand/-/zustand-3.7.2.tgz#7b44c4f4a5bfd7a8296a3957b13e1c346f42514d"
+  integrity sha512-PIJDIZKtokhof+9+60cpockVOq05sJzHCriyvaLBmEJixseQ1a5Kdov6fWZfWOu5SK9c+FhH1jU0tntLxRJYMA==
