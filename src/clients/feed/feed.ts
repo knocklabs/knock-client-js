@@ -31,6 +31,11 @@ export type Status =
   | "unread"
   | "unarchived";
 
+// Default options to apply
+const feedClientDefaults: FeedClientOptions = {
+  archived: "exclude",
+};
+
 class Feed {
   private apiClient: ApiClient;
   private userFeedId: string;
@@ -51,7 +56,7 @@ class Feed {
     this.userFeedId = this.buildUserFeedId();
     this.store = createStore();
     this.broadcaster = new EventEmitter({ wildcard: true, delimiter: "." });
-    this.defaultOptions = options;
+    this.defaultOptions = { ...feedClientDefaults, ...options };
 
     this.channel = this.apiClient.socket.channel(
       `feeds:${this.userFeedId}`,
@@ -153,14 +158,16 @@ class Feed {
   Marking one or more items as archived should:
 
   - Decrement the badge count for any unread / unseen items
-  - Remove the item from the feed list, when the include_archived flag is not true)
+  - Remove the item from the feed list when the `archived` flag is "exclude" (default)
 
   TODO: how do we handle rollbacks?
   */
   async markAsArchived(itemOrItems: FeedItemOrItems) {
     const { getState, setState } = this.store;
     const state = getState();
-    const shouldRemoveItems = this.defaultOptions.include_archived !== true;
+
+    const shouldOptimisticallyRemoveItems =
+      this.defaultOptions.archived === "exclude";
 
     const normalizedItems = Array.isArray(itemOrItems)
       ? itemOrItems
@@ -168,32 +175,62 @@ class Feed {
 
     const itemIds: string[] = normalizedItems.map((item) => item.id);
 
-    // If any of the items are unseen or unread, then capture as we'll want to decrement
-    // the counts for these in the metadata we have
-    const unseenCount = normalizedItems.filter((i) => !i.seen_at).length;
-    const unreadCount = normalizedItems.filter((i) => !i.read_at).length;
+    /*
+      In the proceeding code here we want to optimistically update counts and items
+      that are persisted such that we can display updates immediately on the feed
+      without needing to make a network request.
 
-    // Build the new metadata
-    const meta = {
-      ...state.metadata,
-      total_count: state.metadata.total_count - normalizedItems.length,
-      unseen_count: state.metadata.unseen_count - unseenCount,
-      unread_count: state.metadata.unread_count - unreadCount,
-    };
+      Note: right now this does *not* take into account offline handling or any extensive retry
+      logic, so rollbacks aren't considered. That probably needs to be a future consideration for
+      this library.
 
-    // Perform optimistic updates on the items in the feed
-    if (shouldRemoveItems) {
-      // Filter the items out of the list
-      const entries = state.items.filter((item) => !itemIds.includes(item.id));
+      Scenarios to consider:
+
+      ## Feed scope to archived *only* 
+
+      - Counts should not be decremented
+      - Items should not be removed
+
+      ## Feed scoped to exclude archived items (the default)
+      
+      - Counts should be decremented
+      - Items should be removed
+
+      ## Feed scoped to include archived items as well
+
+      - Counts should not be decremented
+      - Items should not be removed
+    */
+
+    if (shouldOptimisticallyRemoveItems) {
+      // If any of the items are unseen or unread, then capture as we'll want to decrement
+      // the counts for these in the metadata we have
+      const unseenCount = normalizedItems.filter((i) => !i.seen_at).length;
+      const unreadCount = normalizedItems.filter((i) => !i.read_at).length;
+
+      // Build the new metadata
+      const updatedMetdata = {
+        ...state.metadata,
+        total_count: state.metadata.total_count - normalizedItems.length,
+        unseen_count: state.metadata.unseen_count - unseenCount,
+        unread_count: state.metadata.unread_count - unreadCount,
+      };
+
+      // Remove the archiving entries
+      const entriesToSet = state.items.filter(
+        (item) => !itemIds.includes(item.id),
+      );
 
       setState((state) =>
-        state.setResult({ entries, meta, page_info: state.pageInfo }),
+        state.setResult({
+          entries: entriesToSet,
+          meta: updatedMetdata,
+          page_info: state.pageInfo,
+        }),
       );
     } else {
-      setState((state) => {
-        state.setMetadata(meta);
-        state.setItemAttrs(itemIds, { archived_at: new Date().toISOString() });
-      });
+      // Mark all the entries being updated as archived either way so the state is correct
+      state.setItemAttrs(itemIds, { archived_at: new Date().toISOString() });
     }
 
     return this.makeStatusUpdate(itemOrItems, "archived");
