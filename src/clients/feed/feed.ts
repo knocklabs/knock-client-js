@@ -32,7 +32,7 @@ export type Status =
   | "unarchived";
 
 // Default options to apply
-const feedClientDefaults: FeedClientOptions = {
+const feedClientDefaults: Pick<FeedClientOptions, "archived"> = {
   archived: "exclude",
 };
 
