@@ -209,7 +209,7 @@ class Feed {
       const unreadCount = normalizedItems.filter((i) => !i.read_at).length;
 
       // Build the new metadata
-      const updatedMetdata = {
+      const updatedMetadata = {
         ...state.metadata,
         total_count: state.metadata.total_count - normalizedItems.length,
         unseen_count: state.metadata.unseen_count - unseenCount,
@@ -224,7 +224,7 @@ class Feed {
       setState((state) =>
         state.setResult({
           entries: entriesToSet,
-          meta: updatedMetdata,
+          meta: updatedMetadata,
           page_info: state.pageInfo,
         }),
       );
