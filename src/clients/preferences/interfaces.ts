@@ -10,9 +10,7 @@ export type WorkflowPreferenceSetting =
   | boolean
   | { channel_types: ChannelTypePreferences };
 
-export interface WorkflowPreferences {
-  [key: string]: WorkflowPreferenceSetting;
-}
+export type WorkflowPreferences = Record<string, WorkflowPreferenceSetting | undefined>;
 
 export interface SetPreferencesProperties {
   workflows: WorkflowPreferences;
