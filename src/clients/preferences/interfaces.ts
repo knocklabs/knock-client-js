@@ -10,9 +10,7 @@ export type WorkflowPreferenceSetting =
   | boolean
   | { channel_types: ChannelTypePreferences };
 
-export interface WorkflowPreferences {
-  [key: string]: WorkflowPreferenceSetting;
-}
+export type WorkflowPreferences = Partial<Record<string, WorkflowPreferenceSetting>>;
 
 export interface SetPreferencesProperties {
   workflows: WorkflowPreferences;
