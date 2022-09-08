@@ -17,8 +17,10 @@ export interface KnockObject<T = GenericData> {
 
 export interface User extends GenericData {
   id: string;
-  email: string;
-  name: string;
+  email: string | null;
+  name: string | null;
+  phone_number: string | null;
+  avatar: string | null;
   updated_at: string;
   created_at: string | null;
 }
@@ -29,11 +31,13 @@ export interface PageInfo {
   page_size: number;
 }
 
-export interface Activity {
+export type Recipient = User | KnockObject;
+
+export interface Activity<T = GenericData> {
   id: string;
   inserted_at: string;
   updated_at: string;
-  recipient: User;
-  actor: User;
-  data: GenericData;
+  recipient: Recipient;
+  actor: Recipient | null;
+  data: T | null;
 }

@@ -1,4 +1,4 @@
-import { Activity, GenericData, User, PageInfo } from "../../interfaces";
+import { Activity, GenericData, PageInfo, Recipient } from "../../interfaces";
 import { NetworkStatus } from "../../networkStatus";
 
 // Specific feed interfaces
@@ -12,7 +12,6 @@ export interface FeedClientOptions {
   source?: string;
   // Optionally scope all requests to a particular tenant
   tenant?: string;
-
   // Optionally scope to a given archived status (defaults to `exclude`)
   archived?: "include" | "exclude" | "only";
 }
@@ -37,8 +36,8 @@ export interface NotificationSource {
 export interface FeedItem<T = GenericData> {
   __cursor: string;
   id: string;
-  activities: Activity[];
-  actors: User[];
+  activities: Activity<T>[];
+  actors: Recipient[];
   blocks: ContentBlock[];
   inserted_at: string;
   updated_at: string;
@@ -49,6 +48,7 @@ export interface FeedItem<T = GenericData> {
   total_actors: number;
   data: T | null;
   source: NotificationSource;
+  tenant: string | null;
 }
 
 export interface FeedMetadata {
