@@ -31,6 +31,12 @@ export type Status =
   | "unread"
   | "unarchived";
 
+function invertStatus(status: Status): Status {
+  return status.startsWith("un")
+    ? status.substring(2, status.length) as Status
+    : `un${status}` as Status;
+}
+
 // Default options to apply
 const feedClientDefaults: Pick<FeedClientOptions, "archived"> = {
   archived: "exclude",
@@ -186,13 +192,13 @@ class Feed {
 
       Scenarios to consider:
 
-      ## Feed scope to archived *only* 
+      ## Feed scope to archived *only*
 
       - Counts should not be decremented
       - Items should not be removed
 
       ## Feed scoped to exclude archived items (the default)
-      
+
       - Counts should be decremented
       - Items should be removed
 
@@ -397,9 +403,17 @@ class Feed {
       });
     }
 
+    // Handle unx actions
+    if (type.startsWith("un")) {
+      return await this.apiClient.makeRequest({
+        method: "DELETE",
+        url: `/v1/messages/${itemOrItems.id}/${invertStatus(type)}`
+      });
+    }
+
     // If its a single then we can just call the regular endpoint
     const result = await this.apiClient.makeRequest({
-      method: type.startsWith("un") ? "DELETE" : "PUT",
+      method: "PUT",
       url: `/v1/messages/${itemOrItems.id}/${type}`,
     });
 
