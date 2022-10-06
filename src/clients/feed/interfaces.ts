@@ -12,6 +12,8 @@ export interface FeedClientOptions {
   source?: string;
   // Optionally scope all requests to a particular tenant
   tenant?: string;
+  // Optionally scope to notifications with any tenancy or no tenancy
+  has_tenant?: boolean;
   // Optionally scope to a given archived status (defaults to `exclude`)
   archived?: "include" | "exclude" | "only";
 }
