@@ -31,12 +31,6 @@ export type Status =
   | "unread"
   | "unarchived";
 
-function invertStatus(status: Status): Status {
-  return status.startsWith("un")
-    ? status.substring(2, status.length) as Status
-    : `un${status}` as Status;
-}
-
 // Default options to apply
 const feedClientDefaults: Pick<FeedClientOptions, "archived"> = {
   archived: "exclude",
@@ -48,6 +42,7 @@ class Feed {
   private channel: Channel;
   private broadcaster: EventEmitter;
   private defaultOptions: FeedClientOptions;
+  private broadcastChannel: BroadcastChannel | null;
 
   // The raw store instance, used for binding in React and other environments
   public store: StoreApi<FeedStoreState>;
@@ -70,6 +65,13 @@ class Feed {
     );
 
     this.channel.on("new-message", (resp) => this.onNewMessageReceived(resp));
+
+    // Attempt to bind to listen to other events from this feed in different tabs for when
+    // `items:updated` event is
+    this.broadcastChannel =
+      "BroadcastChannel" in self
+        ? new BroadcastChannel(`knock:feed:${this.userFeedId}`)
+        : null;
   }
 
   /**
@@ -81,6 +83,10 @@ class Feed {
     this.broadcaster.removeAllListeners();
     this.channel.off("new-message");
     this.store.destroy();
+
+    if (this.broadcastChannel) {
+      this.broadcastChannel.close();
+    }
   }
 
   /*
@@ -96,6 +102,31 @@ class Feed {
     // Only join the channel if we're not already in a joining state
     if (["closed", "errored"].includes(this.channel.state)) {
       this.channel.join();
+    }
+
+    // Opt into receiving updates from _other tabs for the same user / feed_ via the broadcast
+    // channel (iff it's enabled and exists)
+    if (
+      this.broadcastChannel &&
+      this.defaultOptions.__experimentalCrossBrowserUpdates === true
+    ) {
+      this.broadcastChannel.onmessage = (e) => {
+        switch (e.data.type) {
+          case "items:archived":
+          case "items:unarchived":
+          case "items:seen":
+          case "items:unseen":
+          case "items:read":
+          case "items:unread":
+            // When items are updated in any other tab, simply refetch to get the latest state
+            // to make sure that the state gets updated accordingly. In the future here we could
+            // maybe do this optimistically without the fetch.
+            return this.fetch();
+            break;
+          default:
+            return null;
+        }
+      };
     }
   }
 
@@ -126,6 +157,7 @@ class Feed {
       { seen_at: now },
       "unseen_count",
     );
+
     return this.makeStatusUpdate(itemOrItems, "seen");
   }
 
@@ -136,6 +168,7 @@ class Feed {
       { seen_at: null },
       "unseen_count",
     );
+
     return this.makeStatusUpdate(itemOrItems, "unseen");
   }
 
@@ -147,6 +180,7 @@ class Feed {
       { read_at: now },
       "unread_count",
     );
+
     return this.makeStatusUpdate(itemOrItems, "read");
   }
 
@@ -157,6 +191,7 @@ class Feed {
       { read_at: null },
       "unread_count",
     );
+
     return this.makeStatusUpdate(itemOrItems, "unread");
   }
 
@@ -182,7 +217,7 @@ class Feed {
     const itemIds: string[] = normalizedItems.map((item) => item.id);
 
     /*
-      In the proceeding code here we want to optimistically update counts and items
+      In the code here we want to optimistically update counts and items
       that are persisted such that we can display updates immediately on the feed
       without needing to make a network request.
 
@@ -246,6 +281,7 @@ class Feed {
     this.optimisticallyPerformStatusUpdate(itemOrItems, "unarchived", {
       archived_at: null,
     });
+
     return this.makeStatusUpdate(itemOrItems, "unarchived");
   }
 
@@ -265,7 +301,14 @@ class Feed {
     );
 
     // Always include the default params, if they have been set
-    const queryParams = { ...this.defaultOptions, ...options };
+    const queryParams = {
+      ...this.defaultOptions,
+      ...options,
+      // Unset options that should not be sent to the API
+      __loadingType: undefined,
+      __fetchSource: undefined,
+      __experimentalCrossBrowserUpdates: undefined,
+    };
 
     const result = await this.apiClient.makeRequest({
       method: "GET",
@@ -392,30 +435,26 @@ class Feed {
   }
 
   private async makeStatusUpdate(itemOrItems: FeedItemOrItems, type: Status) {
-    // If we're interacting with an array, then we want to send this as a batch
-    if (Array.isArray(itemOrItems)) {
-      const itemIds = itemOrItems.map((item) => item.id);
+    // Always treat items as a batch to use the corresponding batch endpoint
+    const items = Array.isArray(itemOrItems) ? itemOrItems : [itemOrItems];
+    const itemIds = items.map((item) => item.id);
 
-      return await this.apiClient.makeRequest({
-        method: "POST",
-        url: `/v1/messages/batch/${type}`,
-        data: { message_ids: itemIds },
-      });
-    }
-
-    // Handle unx actions
-    if (type.startsWith("un")) {
-      return await this.apiClient.makeRequest({
-        method: "DELETE",
-        url: `/v1/messages/${itemOrItems.id}/${invertStatus(type)}`
-      });
-    }
-
-    // If its a single then we can just call the regular endpoint
     const result = await this.apiClient.makeRequest({
-      method: "PUT",
-      url: `/v1/messages/${itemOrItems.id}/${type}`,
+      method: "POST",
+      url: `/v1/messages/batch/${type}`,
+      data: { message_ids: itemIds },
     });
+
+    // Emit the event that these items had their statuses changed
+    // Note: we do this after the update to ensure that the server event actually completed
+    this.broadcaster.emit(`items:${type}`, { items });
+
+    if (this.broadcastChannel) {
+      this.broadcastChannel.postMessage({
+        type: `items:${type}`,
+        payload: { items },
+      });
+    }
 
     return result;
   }

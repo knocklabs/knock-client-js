@@ -16,12 +16,14 @@ export interface FeedClientOptions {
   has_tenant?: boolean;
   // Optionally scope to a given archived status (defaults to `exclude`)
   archived?: "include" | "exclude" | "only";
+  // Optionally enable cross browser feed updates for this feed
+  __experimentalCrossBrowserUpdates?: boolean;
 }
 
 export type FetchFeedOptions = {
   __loadingType?: NetworkStatus.loading | NetworkStatus.fetchMore;
   __fetchSource?: "socket" | "http";
-} & FeedClientOptions;
+} & Omit<FeedClientOptions, "__experimentalCrossBrowserUpdates">;
 
 export interface ContentBlock {
   content: string;

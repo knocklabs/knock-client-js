@@ -35,10 +35,16 @@ export type FeedRealTimeEvent = "messages.new";
 export type FeedEvent =
   | FeedRealTimeEvent
   | "items.received.page"
-  | "items.received.realtime";
+  | "items.received.realtime"
+  | "items.archived"
+  | "items.unarchived"
+  | "items.seen"
+  | "items.unseen"
+  | "items.read"
+  | "items.unread";
 
-// Because we can bind to wild card feed events, this is here to accomodate
-export type BindableFeedEvent = FeedEvent | "items.received.*";
+// Because we can bind to wild card feed events, this is here to accomodate whatever can be bound to
+export type BindableFeedEvent = FeedEvent | "items.received.*" | "items.*";
 
 export type FeedEventPayload = {
   event: Omit<FeedEvent, "messages.new">;
