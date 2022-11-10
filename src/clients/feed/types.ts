@@ -18,6 +18,7 @@ export type FeedStoreState = {
   setLoading: (loading: boolean) => void;
   setNetworkStatus: (networkStatus: NetworkStatus) => void;
   setItemAttrs: (itemIds: string[], attrs: object) => void;
+  resetStore: (metadata?: FeedMetadata) => void;
 };
 
 export type FeedMessagesReceivedPayload = {
@@ -41,7 +42,10 @@ export type FeedEvent =
   | "items.seen"
   | "items.unseen"
   | "items.read"
-  | "items.unread";
+  | "items.unread"
+  | "items.all_archived"
+  | "items.all_read"
+  | "items.all_seen";
 
 // Because we can bind to wild card feed events, this is here to accomodate whatever can be bound to
 export type BindableFeedEvent = FeedEvent | "items.received.*" | "items.*";

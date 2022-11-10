@@ -118,6 +118,9 @@ class Feed {
           case "items:unseen":
           case "items:read":
           case "items:unread":
+          case "items:all_read":
+          case "items:all_seen":
+          case "items:all_archived":
             // When items are updated in any other tab, simply refetch to get the latest state
             // to make sure that the state gets updated accordingly. In the future here we could
             // maybe do this optimistically without the fetch.
@@ -161,6 +164,59 @@ class Feed {
     return this.makeStatusUpdate(itemOrItems, "seen");
   }
 
+  async markAllAsSeen() {
+    // To mark all of the messages as seen we:
+    // 1. Optimistically update *everything* we have in the store
+    // 2. We decrement the `unseen_count` to zero optimistically
+    // 3. We issue the API call to the endpoint
+    //
+    // Note: there is the potential for a race condition here because the bulk
+    // update is an async method, so if a new message comes in during this window before
+    // the update has been processed we'll effectively reset the `unseen_count` to be what it was.
+    //
+    // Note: here we optimistically handle the case whereby the feed is scoped to show only `unseen`
+    // items by removing everything from view.
+    const { getState, setState } = this.store;
+    const { metadata, items } = getState();
+
+    const isViewingOnlyUnseen = this.defaultOptions.status === "unseen";
+
+    // If we're looking at the unseen view, then we want to remove all of the items optimistically
+    // from the store given that nothing should be visible. We do this by resetting the store state
+    // and setting the current metadata counts to 0
+    if (isViewingOnlyUnseen) {
+      setState((store) =>
+        store.resetStore({
+          ...metadata,
+          total_count: 0,
+          unseen_count: 0,
+        }),
+      );
+    } else {
+      // Otherwise we want to update the metadata and mark all of the items in the store as seen
+      setState((store) => store.setMetadata({ ...metadata, unseen_count: 0 }));
+
+      const attrs = { seen_at: new Date().toISOString() };
+      const itemIds = items.map((item) => item.id);
+
+      setState((store) => store.setItemAttrs(itemIds, attrs));
+    }
+
+    // Issue the API request to the bulk status change API
+    const result = await this.makeBulkStatusUpdate("seen");
+
+    this.broadcaster.emit(`items:all_seen`, { items });
+
+    if (this.broadcastChannel) {
+      this.broadcastChannel.postMessage({
+        type: `items:all_seen`,
+        payload: { items },
+      });
+    }
+
+    return result;
+  }
+
   async markAsUnseen(itemOrItems: FeedItemOrItems) {
     this.optimisticallyPerformStatusUpdate(
       itemOrItems,
@@ -182,6 +238,59 @@ class Feed {
     );
 
     return this.makeStatusUpdate(itemOrItems, "read");
+  }
+
+  async markAllAsRead() {
+    // To mark all of the messages as read we:
+    // 1. Optimistically update *everything* we have in the store
+    // 2. We decrement the `unread_count` to zero optimistically
+    // 3. We issue the API call to the endpoint
+    //
+    // Note: there is the potential for a race condition here because the bulk
+    // update is an async method, so if a new message comes in during this window before
+    // the update has been processed we'll effectively reset the `unread_count` to be what it was.
+    //
+    // Note: here we optimistically handle the case whereby the feed is scoped to show only `unread`
+    // items by removing everything from view.
+    const { getState, setState } = this.store;
+    const { metadata, items } = getState();
+
+    const isViewingOnlyUnread = this.defaultOptions.status === "unread";
+
+    // If we're looking at the unread view, then we want to remove all of the items optimistically
+    // from the store given that nothing should be visible. We do this by resetting the store state
+    // and setting the current metadata counts to 0
+    if (isViewingOnlyUnread) {
+      setState((store) =>
+        store.resetStore({
+          ...metadata,
+          total_count: 0,
+          unread_count: 0,
+        }),
+      );
+    } else {
+      // Otherwise we want to update the metadata and mark all of the items in the store as seen
+      setState((store) => store.setMetadata({ ...metadata, unread_count: 0 }));
+
+      const attrs = { read_at: new Date().toISOString() };
+      const itemIds = items.map((item) => item.id);
+
+      setState((store) => store.setItemAttrs(itemIds, attrs));
+    }
+
+    // Issue the API request to the bulk status change API
+    const result = await this.makeBulkStatusUpdate("read");
+
+    this.broadcaster.emit(`items:all_read`, { items });
+
+    if (this.broadcastChannel) {
+      this.broadcastChannel.postMessage({
+        type: `items:all_read`,
+        payload: { items },
+      });
+    }
+
+    return result;
   }
 
   async markAsUnread(itemOrItems: FeedItemOrItems) {
@@ -275,6 +384,44 @@ class Feed {
     }
 
     return this.makeStatusUpdate(itemOrItems, "archived");
+  }
+
+  async markAllAsArchived() {
+    // Note: there is the potential for a race condition here because the bulk
+    // update is an async method, so if a new message comes in during this window before
+    // the update has been processed we'll effectively reset the `unseen_count` to be what it was.
+    const { setState, getState } = this.store;
+    const { items } = getState();
+
+    // Here if we're looking at a feed that excludes all of the archived items by default then we
+    // will want to optimistically remove all of the items from the feed as they are now all excluded
+    const shouldOptimisticallyRemoveItems =
+      this.defaultOptions.archived === "exclude";
+
+    if (shouldOptimisticallyRemoveItems) {
+      // Reset the store to clear out all of items and reset the badge count
+      setState((store) => store.resetStore());
+    } else {
+      // Mark all the entries being updated as archived either way so the state is correct
+      setState((store) => {
+        const itemIds = items.map((i) => i.id);
+        store.setItemAttrs(itemIds, { archived_at: new Date().toISOString() });
+      });
+    }
+
+    // Issue the API request to the bulk status change API
+    const result = await this.makeBulkStatusUpdate("archive");
+
+    this.broadcaster.emit(`items:all_archived`, { items });
+
+    if (this.broadcastChannel) {
+      this.broadcastChannel.postMessage({
+        type: `items:all_archived`,
+        payload: { items },
+      });
+    }
+
+    return result;
   }
 
   async markAsUnarchived(itemOrItems: FeedItemOrItems) {
@@ -457,6 +604,14 @@ class Feed {
     }
 
     return result;
+  }
+
+  private async makeBulkStatusUpdate(type: "seen" | "read" | "archive") {
+    return await this.apiClient.makeRequest({
+      method: "POST",
+      url: `/v1/channels/${this.feedId}/messages/bulk/${type}`,
+      data: { user_ids: [this.knock.userId] },
+    });
   }
 }
 
