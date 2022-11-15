@@ -69,7 +69,7 @@ class Feed {
     // Attempt to bind to listen to other events from this feed in different tabs for when
     // `items:updated` event is
     this.broadcastChannel =
-      "BroadcastChannel" in self
+      self && "BroadcastChannel" in self
         ? new BroadcastChannel(`knock:feed:${this.userFeedId}`)
         : null;
   }
@@ -206,13 +206,7 @@ class Feed {
     const result = await this.makeBulkStatusUpdate("seen");
 
     this.broadcaster.emit(`items:all_seen`, { items });
-
-    if (this.broadcastChannel) {
-      this.broadcastChannel.postMessage({
-        type: `items:all_seen`,
-        payload: { items },
-      });
-    }
+    this.broadcastOverChannel(`items:all_seen`, { items });
 
     return result;
   }
@@ -282,13 +276,7 @@ class Feed {
     const result = await this.makeBulkStatusUpdate("read");
 
     this.broadcaster.emit(`items:all_read`, { items });
-
-    if (this.broadcastChannel) {
-      this.broadcastChannel.postMessage({
-        type: `items:all_read`,
-        payload: { items },
-      });
-    }
+    this.broadcastOverChannel(`items:all_read`, { items });
 
     return result;
   }
@@ -413,13 +401,7 @@ class Feed {
     const result = await this.makeBulkStatusUpdate("archive");
 
     this.broadcaster.emit(`items:all_archived`, { items });
-
-    if (this.broadcastChannel) {
-      this.broadcastChannel.postMessage({
-        type: `items:all_archived`,
-        payload: { items },
-      });
-    }
+    this.broadcastOverChannel(`items:all_archived`, { items });
 
     return result;
   }
@@ -595,23 +577,51 @@ class Feed {
     // Emit the event that these items had their statuses changed
     // Note: we do this after the update to ensure that the server event actually completed
     this.broadcaster.emit(`items:${type}`, { items });
-
-    if (this.broadcastChannel) {
-      this.broadcastChannel.postMessage({
-        type: `items:${type}`,
-        payload: { items },
-      });
-    }
+    this.broadcastOverChannel(`items:${type}`, { items });
 
     return result;
   }
 
   private async makeBulkStatusUpdate(type: "seen" | "read" | "archive") {
+    // The base scope for the call should take into account all of the options currently
+    // set on the feed, as well as being scoped for the current user. We do this so that
+    // we ONLY make changes to the messages that are currently in view on this feed, and not
+    // all messages that exist.
+    const options = {
+      user_ids: [this.knock.userId],
+      engagement_status:
+        this.defaultOptions.status !== "all"
+          ? this.defaultOptions.status
+          : undefined,
+      archived: this.defaultOptions.archived,
+      has_tenant: this.defaultOptions.has_tenant,
+      tenants: this.defaultOptions.tenant
+        ? [this.defaultOptions.tenant]
+        : undefined,
+    };
+
     return await this.apiClient.makeRequest({
       method: "POST",
       url: `/v1/channels/${this.feedId}/messages/bulk/${type}`,
-      data: { user_ids: [this.knock.userId] },
+      data: options,
     });
+  }
+
+  private broadcastOverChannel(type: string, payload: any) {
+    if (!this.broadcastChannel) {
+      return;
+    }
+
+    try {
+      const stringifiedPayload = JSON.parse(JSON.stringify(payload));
+
+      this.broadcastChannel.postMessage({
+        type,
+        payload: stringifiedPayload,
+      });
+    } catch (e) {
+      console.warn(`Could not broadcast ${type}, got error: ${e}`);
+    }
   }
 }
 
