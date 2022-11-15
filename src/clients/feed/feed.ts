@@ -66,8 +66,8 @@ class Feed {
 
     this.channel.on("new-message", (resp) => this.onNewMessageReceived(resp));
 
-    // Attempt to bind to listen to other events from this feed in different tabs for when
-    // `items:updated` event is
+    // Attempt to bind to listen to other events from this feed in different tabs
+    // Note: here we ensure `self` is available (it's not in server rendered envs)
     this.broadcastChannel =
       self && "BroadcastChannel" in self
         ? new BroadcastChannel(`knock:feed:${this.userFeedId}`)
@@ -608,10 +608,13 @@ class Feed {
   }
 
   private broadcastOverChannel(type: string, payload: any) {
+    // The broadcastChannel may not be available in non-browser environments
     if (!this.broadcastChannel) {
       return;
     }
 
+    // Here we stringify our payload and try and send as JSON such that we
+    // don't get any `An object could not be cloned` errors when trying to broadcast
     try {
       const stringifiedPayload = JSON.parse(JSON.stringify(payload));
 
