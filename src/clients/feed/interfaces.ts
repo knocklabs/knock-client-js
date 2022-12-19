@@ -16,6 +16,8 @@ export interface FeedClientOptions {
   has_tenant?: boolean;
   // Optionally scope to a given archived status (defaults to `exclude`)
   archived?: "include" | "exclude" | "only";
+  // Optionally scope all notifications that contain this argument as part of their trigger payload
+  trigger_data?: GenericData;
   // Optionally enable cross browser feed updates for this feed
   __experimentalCrossBrowserUpdates?: boolean;
 }
