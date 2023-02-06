@@ -7,9 +7,9 @@ const DEFAULT_HOST = "https://api.knock.app";
 
 class Knock {
   private host: string;
-  private userToken: string | undefined;
   private apiClient: ApiClient | null = null;
   public userId: string | undefined;
+  public userToken: string | undefined;
 
   readonly feeds = new FeedClient(this);
   readonly preferences = new Preferences(this);
@@ -26,7 +26,7 @@ class Knock {
   }
 
   client() {
-    if (!this.userId && !this.userToken) {
+    if (!this.userId) {
       console.warn(
         `[Knock] You must call authenticate(userId, userToken) first before trying to make a request.
         Typically you'll see this message when you're creating a feed instance before having called
@@ -57,6 +57,14 @@ class Knock {
     this.userToken = userToken;
 
     return;
+  }
+
+  /*
+    Returns whether or this Knock instance is authenticated. Passing `true` will check the presence
+    of the userToken as well.
+  */
+  isAuthenticated(checkUserToken = false) {
+    return checkUserToken ? this.userId && this.userToken : this.userId;
   }
 
   // Used to teardown any connected instances
