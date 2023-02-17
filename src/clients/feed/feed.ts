@@ -26,6 +26,7 @@ import { isRequestInFlight, NetworkStatus } from "../../networkStatus";
 export type Status =
   | "seen"
   | "read"
+  | "interacted"
   | "archived"
   | "unseen"
   | "unread"
@@ -290,6 +291,21 @@ class Feed {
     );
 
     return this.makeStatusUpdate(itemOrItems, "unread");
+  }
+
+  async markAsInteracted(itemOrItems: FeedItemOrItems) {
+    const now = new Date().toISOString();
+    this.optimisticallyPerformStatusUpdate(
+      itemOrItems,
+      "interacted",
+      {
+        read_at: now,
+        interacted_at: now,
+      },
+      "unread_count",
+    );
+
+    return this.makeStatusUpdate(itemOrItems, "interacted");
   }
 
   /*
