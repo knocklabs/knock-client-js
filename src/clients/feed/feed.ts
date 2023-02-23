@@ -554,18 +554,30 @@ class Feed {
     badgeCountAttr?: "unread_count" | "unseen_count",
   ) {
     const { getState, setState } = this.store;
-    const itemIds = Array.isArray(itemOrItems)
-      ? itemOrItems.map((item) => item.id)
-      : [itemOrItems.id];
+    const normalizedItems = Array.isArray(itemOrItems)
+      ? itemOrItems
+      : [itemOrItems];
+    const itemIds = normalizedItems.map((item) => item.id);
 
     if (badgeCountAttr) {
       const { metadata } = getState();
 
+      // We only want to update the counts of items that have not already been counted towards the
+      // badge count total to avoid updating the badge count unnecessarily.
+      const itemsToUpdate = normalizedItems.filter((item) => {
+        if (type === "seen") return item.seen_at === null;
+        if (type === "unseen") return item.seen_at !== null;
+        if (type === "read") return item.read_at === null;
+        if (type === "unread") return item.read_at !== null;
+
+        return true;
+      });
+
       // Tnis is a hack to determine the direction of whether we're
       // adding or removing from the badge count
       const direction = type.startsWith("un")
-        ? itemIds.length
-        : -itemIds.length;
+        ? itemsToUpdate.length
+        : -itemsToUpdate.length;
 
       setState((store) =>
         store.setMetadata({
