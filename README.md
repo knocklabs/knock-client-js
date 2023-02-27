@@ -65,7 +65,7 @@ const feedClient = knockClient.feeds.initialize(
 );
 
 // Connect to the real-time socket
-const teardown = feedClient.listenForUpdates();
+feedClient.listenForUpdates();
 
 // Setup a callback for when a batch of items is received (including on first load and subsequent page load)
 feedClient.on("items.received.page", ({ items }) => {
@@ -97,7 +97,7 @@ feedClient.fetch({
   tenant: "jurassic-park",
 });
 
-teardown();
+feedClient.teardown();
 ```
 
 ### Reading the feed store state (programmatically)
