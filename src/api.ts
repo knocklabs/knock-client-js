@@ -44,7 +44,6 @@ class ApiClient {
 
     if (typeof window !== "undefined") {
       this.socket = new Socket(`${this.host.replace("http", "ws")}/ws/v1`, {
-        transport: window.WebSocket,
         params: {
           user_token: this.userToken,
           api_key: this.apiKey,
