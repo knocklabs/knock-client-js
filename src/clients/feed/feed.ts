@@ -40,7 +40,7 @@ const feedClientDefaults: Pick<FeedClientOptions, "archived"> = {
 class Feed {
   private apiClient: ApiClient;
   private userFeedId: string;
-  private channel: Channel;
+  private channel: Channel | undefined;
   private broadcaster: EventEmitter;
   private defaultOptions: FeedClientOptions;
   private broadcastChannel: BroadcastChannel | null;
@@ -60,17 +60,20 @@ class Feed {
     this.broadcaster = new EventEmitter({ wildcard: true, delimiter: "." });
     this.defaultOptions = { ...feedClientDefaults, ...options };
 
-    this.channel = this.apiClient.socket.channel(
-      `feeds:${this.userFeedId}`,
-      this.defaultOptions,
-    );
+    // In server environments we might not have a socket connection
+    if (this.apiClient.socket) {
+      this.channel = this.apiClient.socket.channel(
+        `feeds:${this.userFeedId}`,
+        this.defaultOptions,
+      );
 
-    this.channel.on("new-message", (resp) => this.onNewMessageReceived(resp));
+      this.channel.on("new-message", (resp) => this.onNewMessageReceived(resp));
+    }
 
     // Attempt to bind to listen to other events from this feed in different tabs
     // Note: here we ensure `self` is available (it's not in server rendered envs)
     this.broadcastChannel =
-      self && "BroadcastChannel" in self
+      typeof self !== "undefined" && "BroadcastChannel" in self
         ? new BroadcastChannel(`knock:feed:${this.userFeedId}`)
         : null;
   }
@@ -80,9 +83,12 @@ class Feed {
    * an open socket connection.
    */
   teardown() {
-    this.channel.leave();
+    if (this.channel) {
+      this.channel.leave();
+      this.channel.off("new-message");
+    }
+
     this.broadcaster.removeAllListeners();
-    this.channel.off("new-message");
     this.store.destroy();
 
     if (this.broadcastChannel) {
@@ -96,12 +102,12 @@ class Feed {
   */
   listenForUpdates() {
     // Connect the socket only if we don't already have a connection
-    if (!this.apiClient.socket.isConnected()) {
+    if (this.apiClient.socket && !this.apiClient.socket.isConnected()) {
       this.apiClient.socket.connect();
     }
 
     // Only join the channel if we're not already in a joining state
-    if (["closed", "errored"].includes(this.channel.state)) {
+    if (this.channel && ["closed", "errored"].includes(this.channel.state)) {
       this.channel.join();
     }
 
