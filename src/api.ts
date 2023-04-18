@@ -24,7 +24,7 @@ class ApiClient {
   private userToken: string | null;
   private axiosClient: AxiosInstance;
 
-  public socket: Socket;
+  public socket: Socket | undefined;
 
   constructor(options: ApiClientOptions) {
     this.host = options.host;
@@ -42,14 +42,15 @@ class ApiClient {
       },
     });
 
-    this.socket = new Socket(`${this.host.replace("http", "ws")}/ws/v1`, {
-      // If we're in a non-browser environment, then fallback to longpolling
-      transport: typeof window === "undefined" ? LongPoll : window.WebSocket,
-      params: {
-        user_token: this.userToken,
-        api_key: this.apiKey,
-      },
-    });
+    if (typeof window !== "undefined") {
+      this.socket = new Socket(`${this.host.replace("http", "ws")}/ws/v1`, {
+        transport: window.WebSocket,
+        params: {
+          user_token: this.userToken,
+          api_key: this.apiKey,
+        },
+      });
+    }
 
     axiosRetry(this.axiosClient, {
       retries: 3,
