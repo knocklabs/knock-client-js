@@ -62,7 +62,7 @@
     "axios": "^0.21.4",
     "axios-retry": "^3.1.9",
     "eventemitter2": "^6.4.5",
-    "phoenix": "1.5.8",
+    "phoenix": "1.6.16",
     "zustand": "^3.7.2"
   }
 }
