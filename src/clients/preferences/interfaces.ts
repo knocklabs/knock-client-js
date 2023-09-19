@@ -1,6 +1,6 @@
 // Channel types supported in Knock
 // TODO: it would be great to pull this in from an external location
-export type ChannelType = "email" | "in_app_feed" | "sms" | "push" | "chat";
+export type ChannelType = "email" | "in_app_feed" | "sms" | "push" | "chat" | "http";
 
 export type ChannelTypePreferences = {
   [K in ChannelType]?: boolean;
