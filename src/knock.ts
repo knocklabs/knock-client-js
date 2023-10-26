@@ -1,9 +1,10 @@
 import ApiClient from "./api";
 import FeedClient from "./clients/feed";
 import Preferences from "./clients/preferences";
+import SlackClient from "./clients/slack";
 import { KnockOptions } from "./interfaces";
 
-const DEFAULT_HOST = "https://api.knock.app";
+const DEFAULT_HOST = "https://localhost:4001";
 
 class Knock {
   private host: string;
@@ -13,6 +14,7 @@ class Knock {
 
   readonly feeds = new FeedClient(this);
   readonly preferences = new Preferences(this);
+  readonly slack = new SlackClient(this);
 
   constructor(readonly apiKey: string, options: KnockOptions = {}) {
     this.host = options.host || DEFAULT_HOST;
