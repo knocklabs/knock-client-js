@@ -575,6 +575,7 @@ class Feed {
         if (type === "unseen") return item.seen_at !== null;
         if (type === "read") return item.read_at === null;
         if (type === "unread") return item.read_at !== null;
+        if (type === "interacted") return item.read_at === null;
 
         return true;
       });
