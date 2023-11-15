@@ -571,12 +571,19 @@ class Feed {
       // We only want to update the counts of items that have not already been counted towards the
       // badge count total to avoid updating the badge count unnecessarily.
       const itemsToUpdate = normalizedItems.filter((item) => {
-        if (type === "seen") return item.seen_at === null;
-        if (type === "unseen") return item.seen_at !== null;
-        if (type === "read") return item.read_at === null;
-        if (type === "unread") return item.read_at !== null;
-
-        return true;
+        switch (type) {
+          case "seen":
+            return item.seen_at === null;
+          case "unseen":
+            return item.seen_at !== null;
+          case "read":
+          case "interacted":
+            return item.read_at === null;
+          case "unread":
+            return item.read_at !== null;
+          default:
+            return true;
+        }
       });
 
       // Tnis is a hack to determine the direction of whether we're
