@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 import axiosRetry from "axios-retry";
-import { Socket } from "phoenix";
+import { LongPoll, Socket } from "phoenix";
 import { AxiosError } from "axios";
 
 type ApiClientOptions = {
