@@ -182,3 +182,30 @@ await knockClient.preferences.setWorkflow("dinosaurs-loose", {
   },
 });
 ```
+
+
+### Managing the current user's channel data
+
+```typescript
+// Get user channel data
+await knockClient.user.getChannelData({
+  userId: "user-id",
+  channelId: "channel-id"
+});
+```
+
+```typescript
+// Set push channel data for a user
+await knockClient.user.setChannelData({
+  userId: "user-id",
+  channelId: "channel-id",
+  channelData: {
+    tokens: [
+      "apns-user-push-token"
+    ]
+  }
+});
+```
+
+See provider requirements for setting channel data [here]("https://docs.knock.app/managing-recipients/setting-channel-data#provider-data-requirements").
+
