@@ -43,10 +43,6 @@ knockClient.authenticate(
 );
 ```
 
-## Usage
-
-You can find an example usage in a React application in the [example/App.js](https://github.com/knocklabs/client-js/blob/main/example/src/App.js) file, which is a plain-old Create React App.
-
 ### Retrieving new items from the feed
 
 ```typescript
@@ -159,7 +155,7 @@ feedClient.markAsUnarchived(feedItemOrItems);
 
 ```typescript
 // Set an entire preference set
-await knockClient.preferences.set({
+await knockClient.user.setPreferences({
   channel_types: { email: true, sms: false },
   workflows: {
     "dinosaurs-loose": {
@@ -169,33 +165,25 @@ await knockClient.preferences.set({
 });
 
 // Retrieve a whole preference set
-const preferences = await knockClient.preferences.get();
+const preferences = await knockClient.user.getPreferences();
 
-// Granular preference setting for channel types
-await knockClient.preferences.setChannelType("email", false);
-
-// Granular preference setting for workflows
-await knockClient.preferences.setWorkflow("dinosaurs-loose", {
-  channel_types: {
-    email: true,
-    in_app_feed: false,
-  },
-});
+// Retrieve all preference sets for the user
+const preferenceSets = await knockClient.user.getAllPreferences();
 ```
 
 ### Managing the current user's channel data
 
 ```typescript
 // Get user channel data
-await knockClient.user.getChannelData({
-  channelId: "channel-id",
+const channelData = await knockClient.user.getChannelData({
+  channelId: "uuid-knock-channel-id",
 });
 ```
 
 ```typescript
 // Set push channel data for a user
 await knockClient.user.setChannelData({
-  channelId: "channel-id",
+  channelId: "uuid-knock-channel-id",
   channelData: {
     tokens: ["apns-user-push-token"],
   },
