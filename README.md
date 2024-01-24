@@ -1,5 +1,7 @@
 # Knock Javascript client library
 
+**Note: This package has been moved to our [JavaScript monorepo](https://github.com/knocklabs/javascript/tree/main/packages/client).**
+
 A client-side Javascript library to interact with user-facing Knock features, such as feeds.
 
 **Note: this is a lower level library designed for building UI on top of**
